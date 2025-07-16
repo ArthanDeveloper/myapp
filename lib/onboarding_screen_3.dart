@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
+import 'package:myapp/login_page.dart'; // Import the login page
 
 class OnboardingScreen3 extends StatefulWidget {
-  const OnboardingScreen3({super.key});
-
   @override
   _OnboardingScreen3State createState() => _OnboardingScreen3State();
 }
@@ -29,14 +28,14 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
     // Start the animation
     _controller.forward();
 
-    // Set the onboarding visited flag in local storage when this screen is initialized
-    _setOnboardingVisitedFlag();
+    // Set the 'onboarding_visited' flag to true after this screen loads
+    _setOnboardingVisited();
   }
 
-  Future<void> _setOnboardingVisitedFlag() async {
+  Future<void> _setOnboardingVisited() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_visited', true);
-    print('Onboarding visited flag set to true'); // For debugging
+    print('Onboarding visited flag set to true.');
   }
 
   @override
@@ -88,7 +87,10 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
               // Buttons from screenshot
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement navigation for new users
+                  // Navigate to the LoginPage
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 15.0),
@@ -107,6 +109,10 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
               OutlinedButton(
                 onPressed: () {
                   // TODO: Implement navigation for existing users
+                  // You might want to navigate to the LoginPage as well, or a different flow
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => LoginPage()),
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 15.0),
