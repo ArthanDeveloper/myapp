@@ -97,3 +97,8 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+  assets:
+    - assets/app_logo.png
+    - assets/app_splash.png
+    - assets/arthik_banner.png
+

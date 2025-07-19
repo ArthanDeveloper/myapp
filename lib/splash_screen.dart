@@ -14,7 +14,7 @@ class SplashScreen extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Image.asset(
-                  'assets/app_logo.png', // Replace with your actual logo path
+                  'assets/arthik_banner.png', // Replace with your actual logo path
                   width: 150,
                   height: 150,
                 ),
@@ -26,9 +26,9 @@ class SplashScreen extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    'Your Company Name', // Replace with your company name
+                    'Arthan Finance Private Limited', // Replace with your company name
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
