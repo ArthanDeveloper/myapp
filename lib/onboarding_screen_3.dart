@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
-import 'package:myapp/login_page.dart'; // Import the login page
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myapp/login_page.dart';
 
 class OnboardingScreen3 extends StatefulWidget {
   @override
@@ -16,31 +16,24 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
   void initState() {
     super.initState();
 
-    // Initialize animation controller
     _controller = AnimationController(
-      duration: const Duration(seconds: 1), // Animation duration
+      duration: const Duration(seconds: 1),
       vsync: this,
     );
 
-    // Define opacity animation
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-
-    // Start the animation
     _controller.forward();
-
-    // Set the 'onboarding_visited' flag to true after this screen loads
     _setOnboardingVisited();
   }
 
   Future<void> _setOnboardingVisited() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_visited', true);
-    print('Onboarding visited flag set to true.');
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // Dispose animation controller
+    _controller.dispose();
     super.dispose();
   }
 
@@ -54,19 +47,19 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 60.0), // Spacing from the top
+              SizedBox(height: 60.0),
               Text(
-                'Why Choose Us?', // Title from screenshot
+                'Why Choose Us?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28.0,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange, // Assuming orange color from screenshot
+                  color: Colors.deepOrange,
                 ),
               ),
               SizedBox(height: 20.0),
               Text(
-                'Because we provide flexible options and best-in-class customer service.', // Description from screenshot
+                'Because we provide flexible options and best-in-class customer service.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
@@ -74,20 +67,18 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
                 ),
               ),
               SizedBox(height: 40.0),
-              // Image placeholder based on screenshot
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    'assets/onboarding_image_3.png', // Replace with your actual image path and add to pubspec.yaml
+                    'assets/onboarding_image_3.png',
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
               SizedBox(height: 40.0),
-              // Buttons from screenshot
+              // Navigate to login page after a delay
               ElevatedButton(
                 onPressed: () {
-                  // Navigate to the LoginPage
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (context) => LoginPage()),
                   );
@@ -97,37 +88,15 @@ class _OnboardingScreen3State extends State<OnboardingScreen3> with SingleTicker
                   backgroundColor: Colors.deepOrange,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                     borderRadius: BorderRadius.circular(8.0),
+                    borderRadius: BorderRadius.circular(8.0),
                   ),
                 ),
                 child: Text(
-                  'I AM NEW TO ARTHIK',
+                  'GET STARTED',
                   style: TextStyle(fontSize: 18.0),
                 ),
               ),
-              SizedBox(height: 15.0),
-              OutlinedButton(
-                onPressed: () {
-                  // TODO: Implement navigation for existing users
-                  // You might want to navigate to the LoginPage as well, or a different flow
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 15.0),
-                  side: BorderSide(color: Colors.blue),
-                  foregroundColor: Colors.blue,
-                   shape: RoundedRectangleBorder(
-                     borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: Text(
-                  'I ALREADY HAVE AN ACCOUNT',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              ),
-              SizedBox(height: 40.0), // Spacing from the bottom
+              SizedBox(height: 40.0),
             ],
           ),
         ),

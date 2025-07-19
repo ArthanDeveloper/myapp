@@ -85,43 +85,6 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> with SingleTicker
                 ),
               ),
               SizedBox(height: 40.0),
-              // Buttons from screenshot
-              ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement navigation for new users
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 15.0),
-                  backgroundColor: Colors.deepOrange,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                     borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: Text(
-                  'I AM NEW TO ARTHIK',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              ),
-              SizedBox(height: 15.0),
-              OutlinedButton(
-                onPressed: () {
-                  // TODO: Implement navigation for existing users
-                },
-                style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 15.0),
-                  side: BorderSide(color: Colors.blue),
-                  foregroundColor: Colors.blue,
-                   shape: RoundedRectangleBorder(
-                     borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: Text(
-                  'I ALREADY HAVE AN ACCOUNT',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              ),
-              SizedBox(height: 40.0), // Spacing from the bottom
             ],
           ),
         ),

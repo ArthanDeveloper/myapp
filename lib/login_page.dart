@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/services.dart';
 import 'dart:async';
+import 'dart:io' show Platform; // Import Platform
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:myapp/services/api_service.dart';
-import 'package:myapp/models/otp_request_model.dart';
-import 'package:myapp/location_permission_screen.dart';
+import 'package:myapp/search_pan_screen.dart'; // Import SearchPANScreen
+import 'package:smart_auth/smart_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -17,31 +19,54 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _mobileNumberController = TextEditingController();
-  final List<TextEditingController> _otpControllers = List.generate(
-    4,
-    (index) => TextEditingController(),
-  );
-  bool _agreedToTerms = false;
-  bool _otpSent = false;
-  int _resendOtpTimer = 30;
-  Timer? _timer;
+  bool _agreedToTerms1 = true;
+  bool _isLoading = false;
   late ApiService _apiService;
+  late SmartAuth _smartAuth;
 
   @override
   void initState() {
     super.initState();
     final dio = Dio();
     _apiService = ApiService(dio);
+    _smartAuth = SmartAuth();
+    _mobileNumberController.addListener(_onMobileNumberChanged);
+    _autoDetectMobileNumber();
   }
 
   @override
   void dispose() {
+    _mobileNumberController.removeListener(_onMobileNumberChanged);
     _mobileNumberController.dispose();
-    for (var controller in _otpControllers) {
-      controller.dispose();
-    }
-    _timer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _autoDetectMobileNumber() async {
+    // Platform-specific check: Only run on Android
+    if (Platform.isAndroid) {
+      try {
+        final String? mobileNumber = await _smartAuth.getPhoneNumber();
+        if (mobileNumber != null && mobileNumber.isNotEmpty) {
+          final String last10Digits = mobileNumber.length > 10
+              ? mobileNumber.substring(mobileNumber.length - 10)
+              : mobileNumber;
+          // Check if the widget is still mounted before calling setState
+          if (mounted) {
+            setState(() {
+              _mobileNumberController.text = last10Digits;
+            });
+          }
+        }
+      } catch (e) {
+        print('Failed to get phone number hint: $e');
+      }
+    }
+  }
+
+  void _onMobileNumberChanged() {
+    if (_mobileNumberController.text.length == 10 && _agreedToTerms1 && !_isLoading) {
+      _getOtp();
+    }
   }
 
   Future<String> _getDeviceId() async {
@@ -61,46 +86,29 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _getOtp() async {
-    final String deviceId = await _getDeviceId();
-    final String appVersion = await _getAppVersion();
-    final OtpRequestModel request = OtpRequestModel(
-      mobileNumber: _mobileNumberController.text,
-      deviceId: deviceId,
-      appVersion: appVersion,
-    );
+    if (_isLoading) return;
 
-    try {
-      await _apiService.getOtp(request);
-      setState(() {
-        _otpSent = true;
-      });
-      _startResendTimer();
-    } catch (e) {
-      // Handle error
-      print(e);
+    if (_mobileNumberController.text.length != 10) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter a valid 10-digit mobile number.')),
+      );
+      return;
     }
-  }
 
-  void _startResendTimer() {
-    _resendOtpTimer = 30;
-    _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
-      if (_resendOtpTimer < 1) {
-        timer.cancel();
-        setState(() {});
-      } else {
-        setState(() {
-          _resendOtpTimer--;
-        });
-      }
+    setState(() {
+      _isLoading = true;
     });
-  }
 
-  void _onOtpDigitChanged(String value, int index) {
-    if (value.length == 1 && index < _otpControllers.length - 1) {
-      FocusScope.of(context).nextFocus();
-    } else if (value.isEmpty && index > 0) {
-      FocusScope.of(context).previousFocus();
+    // Simulate a 3-second delay
+    await Future.delayed(const Duration(seconds: 3));
+
+    // Navigate to SearchPANScreen after the delay
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => SearchPANScreen(),
+        ),
+      );
     }
   }
 
@@ -108,273 +116,152 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            if (_otpSent) {
-              setState(() {
-                _otpSent = false;
-                _timer?.cancel();
-                for (var controller in _otpControllers) {
-                  controller.clear();
-                }
-              });
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Image.asset('assets/app_logo.png', height: 30),
-            ),
-            Text('arthik', style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.question_mark_outlined),
-            onPressed: () {},
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Center(
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 30,
-                    height: 30,
-                    child: CircularProgressIndicator(
-                      value: _otpSent ? 2 / 5 : 1 / 5,
-                      strokeWidth: 3,
-                      backgroundColor: Colors.grey[300],
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                    ),
-                  ),
-                  Text(
-                    _otpSent ? '2/5' : '1/5',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            SizedBox(height: 20.0),
+            SizedBox(height: 40),
+            Icon(Icons.phone_android, size: 60, color: Colors.blue[700]),
+            SizedBox(height: 20),
             Text(
-              _otpSent
-                  ? 'Verify OTP Next: Location'
-                  : 'Mobile No. Next: Location',
-              style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
+              'Enter Mobile Number',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
-            SizedBox(height: 40.0),
+            SizedBox(height: 8),
             Text(
-              _otpSent ? 'Enter OTP' : 'Enter Your Mobile Number',
-              style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+              'Linked to your bank account',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+              ),
             ),
-            SizedBox(height: 8.0),
-            Text(
-              _otpSent
-                  ? 'Please enter the OTP sent to your mobile number.'
-                  : 'Your phone number helps us stay in touch for account updates and offers.',
-              style: TextStyle(fontSize: 16.0, color: Colors.grey[600]),
-            ),
-            SizedBox(height: 30.0),
-            if (!_otpSent)
-              Row(
+            SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Row(
                 children: [
+                  Text(
+                    '+91',
+                    style: TextStyle(fontSize: 16, color: Colors.black),
+                  ),
+                  SizedBox(width: 10),
                   Expanded(
                     child: TextField(
                       controller: _mobileNumberController,
                       keyboardType: TextInputType.phone,
                       decoration: InputDecoration(
-                        hintText: 'Phone no.',
-                        border: OutlineInputBorder(),
+                        hintText: 'Mobile Number',
+                        border: InputBorder.none,
                       ),
-                    ),
-                  ),
-                  SizedBox(width: 10.0),
-                  ElevatedButton(
-                    onPressed: _getOtp,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 15.0,
-                        horizontal: 20.0,
-                      ),
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    child: Text('GET OTP'),
-                  ),
-                ],
-              ),
-            if (_otpSent)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: List.generate(
-                      4,
-                      (index) => SizedBox(
-                        width: 50,
-                        child: TextField(
-                          controller: _otpControllers[index],
-                          keyboardType: TextInputType.number,
-                          textAlign: TextAlign.center,
-                          maxLength: 1,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            counterText: "",
-                            focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Colors.blue,
-                                width: 2.0,
-                              ),
-                            ),
-                          ),
-                          onChanged:
-                              (value) => _onOtpDigitChanged(value, index),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 15.0),
-                  Align(
-                    alignment: Alignment.center,
-                    child:
-                        _resendOtpTimer > 0
-                            ? Text('RESEND OTP in $_resendOtpTimer seconds')
-                            : TextButton(
-                              onPressed: () {
-                                _startResendTimer();
-                              },
-                              child: Text('RESEND OTP'),
-                            ),
-                  ),
-                ],
-              ),
-            SizedBox(height: 15.0),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                onPressed: () {},
-                child: Text('I HAVE A REFERRAL ID'),
-              ),
-            ),
-            SizedBox(height: 20.0),
-            Container(
-              padding: EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.green[50],
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(Icons.info_outline, color: Colors.green),
-                  SizedBox(width: 10.0),
-                  Expanded(
-                    child: Text(
-                      'Enter the phone no. that is linked with your Aadhaar card & bank account.',
-                      style: TextStyle(
-                        fontSize: 14.0,
-                        color: Colors.green[800],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 30.0),
-            Row(
-              children: [
-                Checkbox(
-                  value: _agreedToTerms,
-                  onChanged: (bool? newValue) {
-                    setState(() {
-                      _agreedToTerms = newValue ?? false;
-                    });
-                  },
-                ),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      text: 'I agree to the ',
-                      style: TextStyle(fontSize: 14.0, color: Colors.black),
-                      children: <TextSpan>[
-                        TextSpan(
-                          text: 'Terms of Services',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()..onTap = () {},
-                        ),
-                        TextSpan(text: ' & agree with the '),
-                        TextSpan(
-                          text: 'Privacy Policy',
-                          style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline,
-                          ),
-                          recognizer: TapGestureRecognizer()..onTap = () {},
-                        ),
-                        TextSpan(
-                          text: ' of Arthan Finance',
-                          style: TextStyle(color: Colors.black),
-                        ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
                       ],
                     ),
                   ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
+            _buildTermsCheckbox(
+              value: _agreedToTerms1,
+              onChanged: (value) => setState(() => _agreedToTerms1 = value!),
+              text: [
+                TextSpan(text: 'By signing up, I agree to the '),
+                TextSpan(
+                  text: 'Terms and Conditions',
+                  style: TextStyle(color: Colors.blue),
+                  recognizer: TapGestureRecognizer()..onTap = () {/* TODO */},
+                ),
+                TextSpan(text: ', '),
+                TextSpan(
+                  text: 'Privacy Policy',
+                  style: TextStyle(color: Colors.blue),
+                  recognizer: TapGestureRecognizer()..onTap = () {/* TODO */},
+                ),
+                TextSpan(
+                  text:
+                      ', and to receive regular communication from OneScore on WhatsApp, Email & SMS',
                 ),
               ],
             ),
-            Expanded(child: SizedBox()),
+            SizedBox(height: 30),
             ElevatedButton(
-              onPressed:
-                  _agreedToTerms
-                      ? () {
-                        if (_otpSent) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => LocationPermissionScreen(),
-                            ),
-                          );
-                        } else {
-                          _getOtp();
-                        }
-                      }
-                      : null,
+              onPressed: (_agreedToTerms1 && !_isLoading) ? _getOtp : null,
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15.0),
-                backgroundColor: Colors.deepOrange,
-                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                backgroundColor: (_agreedToTerms1 && !_isLoading)
+                    ? Colors.deepOrange
+                    : Colors.grey[300],
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(30.0),
                 ),
               ),
-              child: Text(
-                _otpSent ? 'VERIFY OTP' : 'CONTINUE',
-                style: TextStyle(fontSize: 18.0),
-              ),
+              child: _isLoading
+                  ? SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.0,
+                      ),
+                    )
+                  : Text(
+                      'Get OTP',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: (_agreedToTerms1 && !_isLoading)
+                            ? Colors.white
+                            : Colors.black54,
+                      ),
+                    ),
             ),
+            SizedBox(height: 20),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTermsCheckbox({
+    required bool value,
+    required ValueChanged<bool?> onChanged,
+    required List<TextSpan> text,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: value,
+          onChanged: onChanged,
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 12.0),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(fontSize: 12, color: Colors.black87),
+                children: text,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
