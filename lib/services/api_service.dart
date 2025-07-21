@@ -4,7 +4,7 @@ import '../models/otp_request_model.dart';
 
 part 'api_service.g.dart';
 
-@RestApi(baseUrl: "https://api.arthan.ai/arthiknew/api")
+@RestApi(baseUrl: "https://api.arthan.ai/arthik/api")
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
