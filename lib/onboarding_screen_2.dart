@@ -30,11 +30,13 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> with SingleTicker
 
     _controller.forward(); // Start the fade-in animation
 
-    // Set a timer to navigate to the next screen after 3 seconds
-    _timer = Timer(Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => OnboardingScreen3()),
-      );
+    // Set a timer to navigate to the next screen after 2 seconds
+    _timer = Timer(const Duration(seconds: 2), () {
+      if (mounted) { // Check if the widget is still mounted
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => OnboardingScreen3()),
+        );
+      }
     });
   }
 
@@ -55,36 +57,35 @@ class _OnboardingScreen2State extends State<OnboardingScreen2> with SingleTicker
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 60.0), // Spacing from the top
-              Text(
-                'What Sets Us Apart?', // Title from screenshot
+              const SizedBox(height: 60.0),
+              const Text(
+                'What Sets Us Apart?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28.0,
                   fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange, // Assuming orange color from screenshot
+                  color: Colors.deepOrange,
                 ),
               ),
-              SizedBox(height: 20.0),
+              const SizedBox(height: 20.0),
               Text(
-                "Quick loans, no fees, less paperwork and friendly support for you.", // Description from screenshot
+                "Quick loans, no fees, less paperwork and friendly support for you.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
                   color: Colors.grey[600],
                 ),
               ),
-              SizedBox(height: 40.0),
-              // Image placeholder based on screenshot
+              const SizedBox(height: 40.0),
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    'assets/onboarding_image_2.png', // Replace with your actual image path and add to pubspec.yaml
+                    'assets/onboarding_image_2.png',
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
-              SizedBox(height: 40.0),
+              const SizedBox(height: 40.0),
             ],
           ),
         ),

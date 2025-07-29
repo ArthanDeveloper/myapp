@@ -17,29 +17,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
   void initState() {
     super.initState();
 
-    // Initialize animation controller
     _controller = AnimationController(
       duration: const Duration(seconds: 1), // Animation duration
       vsync: this,
     );
 
-    // Define opacity animation
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
-
-    // Start the animation
     _controller.forward();
 
-    // Start timer for navigation
-    Timer(Duration(seconds: 3), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => OnboardingScreen2()),
-      );
+    Timer(const Duration(seconds: 2), () {
+      if (mounted) { // Check if the widget is still mounted
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
+        );
+      }
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // Dispose animation controller
+    _controller.dispose();
     super.dispose();
   }
 
@@ -53,9 +50,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 60.0), // Spacing from the top
-              Text(
-                'Welcome To Arthik', // Updated text from screenshot
+              const SizedBox(height: 60.0),
+              const Text(
+                'Welcome To Arthik',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28.0,
@@ -63,26 +60,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
                   color: Colors.deepOrange,
                 ),
               ),
-              SizedBox(height: 20.0),
+              const SizedBox(height: 20.0),
               Text(
-                'Your Trusted Financial Partner. We are a registered NBFC under the RBI.', // Updated text from screenshot
+                'Your Trusted Financial Partner. We are a registered NBFC under the RBI.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
                   color: Colors.grey[600],
                 ),
               ),
-              SizedBox(height: 40.0),
-              // Image placeholder
+              const SizedBox(height: 40.0),
               Expanded(
                 child: Center(
                   child: Image.asset(
-                    'assets/onboarding_image.png', // Replace with your actual image path and add to pubspec.yaml
+                    'assets/onboarding_image.png',
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
-              SizedBox(height: 40.0),
+              const SizedBox(height: 40.0),
             ],
           ),
         ),

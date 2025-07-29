@@ -39,21 +39,25 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   @override
   void initState() {
     super.initState();
-    // Start a timer to navigate after 5 seconds
-    Timer(Duration(seconds: 5), () async { // Made callback async to use await
+    // Start a timer to navigate after 2 seconds
+    Timer(const Duration(seconds: 2), () async { // Timer set to 2 seconds
       final prefs = await SharedPreferences.getInstance();
       final onboardingVisited = prefs.getBool('onboarding_visited') ?? false;
 
       if (onboardingVisited) {
         // If onboarding has been visited, navigate to Login Page
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => LoginPage()),
-        );
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginPage()),
+          );
+        }
       } else {
         // If onboarding has not been visited, navigate to the first Onboarding Screen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => OnboardingScreen()),
-        );
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          );
+        }
       }
     });
   }
@@ -61,7 +65,7 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
   @override
   Widget build(BuildContext context) {
     // Display the SplashScreen from splash_screen.dart
-    return SplashScreen(); // Use the imported SplashScreen widget
+    return const SplashScreen(); // Use the imported SplashScreen widget
   }
 }
 
