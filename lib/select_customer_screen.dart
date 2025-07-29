@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/accounts_list_screen.dart'; // Import the AccountsListScreen
 
 // Simple data model for a customer profile
 class CustomerProfile {
@@ -6,7 +7,11 @@ class CustomerProfile {
   final String maskedMobile;
   final String id;
 
-  CustomerProfile({required this.name, required this.maskedMobile, required this.id});
+  CustomerProfile({
+    required this.name,
+    required this.maskedMobile,
+    required this.id,
+  });
 }
 
 class SelectCustomerScreen extends StatefulWidget {
@@ -19,8 +24,17 @@ class SelectCustomerScreen extends StatefulWidget {
 class _SelectCustomerScreenState extends State<SelectCustomerScreen> {
   // Dummy data for demonstration
   final List<CustomerProfile> _profiles = [
-    CustomerProfile(name: 'John Doe', maskedMobile: '+91 XXXXXX1234', id: '1'),
-    CustomerProfile(name: 'Jane Smith', maskedMobile: '+91 XXXXXX5678', id: '2'),
+    CustomerProfile(
+      name: 'Kathleen Romero',
+      maskedMobile: '+91 XXXXXX0221',
+      id: '1',
+    ),
+    CustomerProfile(name: 'John Doe', maskedMobile: '+91 XXXXXX1234', id: '2'),
+    CustomerProfile(
+      name: 'Jane Smith',
+      maskedMobile: '+91 XXXXXX5678',
+      id: '3',
+    ),
   ];
 
   String? _selectedProfileId;
@@ -33,8 +47,15 @@ class _SelectCustomerScreenState extends State<SelectCustomerScreen> {
 
   void _onContinue() {
     if (_selectedProfileId != null) {
-      // TODO: Implement navigation to the next screen
+      // Navigate to the AccountsListScreen
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const AccountsListScreen()),
+      );
       print('Selected profile ID: $_selectedProfileId');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a profile to continue.')),
+      );
     }
   }
 
@@ -63,12 +84,18 @@ class _SelectCustomerScreenState extends State<SelectCustomerScreen> {
                     borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 12.0,
+                      horizontal: 16.0,
+                    ),
                     leading: const CircleAvatar(
                       backgroundColor: Colors.black,
                       child: Icon(Icons.person, color: Colors.white),
                     ),
-                    title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      profile.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Text(profile.maskedMobile),
                     trailing: Radio<String>(
                       value: profile.id,
