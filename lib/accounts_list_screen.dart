@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/set_mpin_screen.dart'; // Import the SetMpinScreen
 
 // Data model for an account, similar to CustomerProfile for design consistency
 class Account {
@@ -40,10 +41,11 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
   void _onContinue() {
     if (_selectedAccountIds.isNotEmpty) {
-      // TODO: Implement navigation to the next screen, passing selected account IDs
       print('Selected account IDs: $_selectedAccountIds');
-      // Example navigation:
-      // Navigator.of(context).push(MaterialPageRoute(builder: (context) => NextScreen(selectedAccounts: _selectedAccountIds.toList())));
+      // Navigate to the SetMpinScreen
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const SetMpinScreen()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one account.')),
