@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart'; // Import shared_pr
 import 'package:myapp/splash_screen.dart'; // Import the actual splash screen widget
 import 'package:myapp/onboarding_screen.dart'; // Import the first onboarding screen
 import 'package:myapp/login_page.dart'; // Import the login page
+import 'package:myapp/login_with_mpin_screen.dart'; // Import the LoginWithMpinScreen
 
 void main() {
   runApp(MyApp());
@@ -43,17 +44,22 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
     Timer(const Duration(seconds: 2), () async { // Timer set to 2 seconds
       final prefs = await SharedPreferences.getInstance();
       final onboardingVisited = prefs.getBool('onboarding_visited') ?? false;
+      final setMpinFlag = prefs.getBool('setMpin') ?? false; // Fetch setMpin flag
+      final setBiometricFlag = prefs.getBool('setBiometric') ?? false; // Fetch setBiometric flag
 
-      if (onboardingVisited) {
-        // If onboarding has been visited, navigate to Login Page
-        if (mounted) {
+      if (mounted) { // Check if the widget is still mounted before navigating
+        if (setMpinFlag || setBiometricFlag) {
+          // If either MPIN or Biometric is set, navigate to LoginWithMpinScreen
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const LoginWithMpinScreen()),
+          );
+        } else if (onboardingVisited) {
+          // If onboarding has been visited but no MPIN/Biometric, navigate to Login Page
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const LoginPage()),
           );
-        }
-      } else {
-        // If onboarding has not been visited, navigate to the first Onboarding Screen
-        if (mounted) {
+        } else {
+          // If onboarding has not been visited and no MPIN/Biometric, navigate to the first Onboarding Screen
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const OnboardingScreen()),
           );
