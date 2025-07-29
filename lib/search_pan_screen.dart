@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/select_customer_screen.dart'; // Import the new screen
 
 class SearchPANScreen extends StatefulWidget {
-  const SearchPANScreen({super.key});
-
   @override
   _SearchPANScreenState createState() => _SearchPANScreenState();
 }
@@ -36,6 +35,22 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
       }
     });
     print('Current Search Type: $_searchType'); // For debugging
+  }
+
+  void _onContinue() {
+    // Validate that the input is not empty and a type has been determined
+    if (_panAccountController.text.isNotEmpty && _searchType.isNotEmpty) {
+      print('Searching with type: $_searchType and value: ${_panAccountController.text}');
+      // Navigate to the SelectCustomerScreen
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (context) => const SelectCustomerScreen()),
+      );
+    } else {
+      // Show an error if the input is invalid
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid PAN or Loan Account Number.')),
+      );
+    }
   }
 
   @override
@@ -107,10 +122,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
 
               // Continue Button
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Implement search logic based on _searchType and _panAccountController.text
-                  print('Searching with type: $_searchType and value: ${_panAccountController.text}');
-                },
+                onPressed: _onContinue, // Updated onPressed callback
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 15.0),
                   backgroundColor: Colors.deepOrange, // Consistent button style
