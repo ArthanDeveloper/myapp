@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pinput/pinput.dart';
-import 'package:myapp/setup_complete_screen.dart'; // The final destination after login
+import 'package:myapp/homepage.dart'; // Import the Homepage
+import 'package:myapp/set_mpin_screen.dart'; // Import for "Set MPIN" navigation
 
 class LoginWithMpinScreen extends StatefulWidget {
   const LoginWithMpinScreen({super.key});
@@ -16,6 +17,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
   final TextEditingController _mpinController = TextEditingController();
 
   String _customerName = 'User';
+  String _customerMobile = '';
   bool _setMpinFlag = false;
   bool _setBiometricFlag = false;
   bool _canCheckBiometrics = false;
@@ -59,7 +61,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _customerName = prefs.getString('customerName') ?? 'User';
-// Assuming you save this somewhere
+      _customerMobile = prefs.getString('customerMobile') ?? ''; // Assuming you save this somewhere
       _setMpinFlag = prefs.getBool('setMpin') ?? false;
       _setBiometricFlag = prefs.getBool('setBiometric') ?? false;
     });
@@ -119,8 +121,8 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
         _isAuthenticatingBiometric = false;
       });
       if (authenticated) {
-        // On successful biometric login, navigate to SetupCompleteScreen
-        _navigateToSetupComplete();
+        // On successful biometric login, navigate to Homepage
+        _navigateToHomepage();
       }
     }
   }
@@ -129,7 +131,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     // TODO: Implement actual MPIN verification logic (e.g., send to backend)
     // For now, any 4 digits will be considered successful
     if (_mpinController.text.length == 4) {
-      _navigateToSetupComplete();
+      _navigateToHomepage();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a 4-digit MPIN.')),
@@ -137,9 +139,9 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     }
   }
 
-  void _navigateToSetupComplete() {
+  void _navigateToHomepage() {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const SetupCompleteScreen()),
+      MaterialPageRoute(builder: (context) => const Homepage()),
       (Route<dynamic> route) => false,
     );
   }
@@ -171,7 +173,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
                 children: <Widget>[
                   const Spacer(),
                   // Animation or welcome icon
-                  Icon(Icons.lock_open, size: 80, color: Colors.blueAccent), // Placeholder for unlocking animation
+                  const Icon(Icons.lock_open, size: 80, color: Colors.blueAccent), // Placeholder for unlocking animation
                   const SizedBox(height: 20),
 
                   Text(
@@ -254,7 +256,15 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
                       style: TextStyle(fontSize: 16, color: Colors.red),
                     ),
                     const SizedBox(height: 20),
-                    
+                    ElevatedButton(
+                      onPressed: () {
+                        // Navigate to set MPIN screen
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(builder: (context) => const SetMpinScreen()),
+                        );
+                      },
+                      child: const Text('Set MPIN'),
+                    ),
                   ],
                   const Spacer(),
                 ],
