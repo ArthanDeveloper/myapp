@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:myapp/loan_details_screen.dart'; // Import the LoanDetailsScreen
 
 // Updated data model for a loan to match the new design
 class Loan {
@@ -168,9 +169,11 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
                 ),
                 child: InkWell(
                   onTap: () {
-                    print('Tapped on ${loan.title}');
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Tapped on ${loan.title}')),
+                    // Navigate to the LoanDetailsScreen, passing the selected loan object
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => LoanDetailsScreen(loan: loan),
+                      ),
                     );
                   },
                   borderRadius: BorderRadius.circular(16.0),
