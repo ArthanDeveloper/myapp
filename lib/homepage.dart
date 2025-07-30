@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Simple data model for a loan
+// Updated data model for a loan to match the new design
 class Loan {
   final String title;
   final String status;
   final IconData icon;
+  final String amount;
+  final String lastUpdated;
 
-  Loan({required this.title, required this.status, required this.icon});
+  Loan({
+    required this.title,
+    required this.status,
+    required this.icon,
+    required this.amount,
+    required this.lastUpdated,
+  });
 }
 
 class Homepage extends StatefulWidget {
@@ -23,11 +31,29 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  // Dummy data for the list of loans
+  // Updated dummy data to match the screenshot
   final List<Loan> _loans = [
-    Loan(title: 'Personal Loan', status: 'Active', icon: Icons.person_outline),
-    Loan(title: 'Home Loan', status: 'Pending Approval', icon: Icons.home_outlined),
-    Loan(title: 'Car Loan', status: 'Closed', icon: Icons.directions_car_outlined),
+    Loan(
+      title: 'Mortgage',
+      status: 'Final Approval',
+      icon: Icons.home_outlined,
+      amount: '\$35,000.07',
+      lastUpdated: 'Apr 4, 2024',
+    ),
+    Loan(
+      title: 'Business Loan',
+      status: 'Initial Approval',
+      icon: Icons.business_center_outlined,
+      amount: '\$2,520.00',
+      lastUpdated: 'Mar 28, 2024',
+    ),
+    Loan(
+      title: 'Health Loan',
+      status: 'Approved',
+      icon: Icons.healing_outlined,
+      amount: '\$1,080.32',
+      lastUpdated: 'Apr 16, 2024',
+    ),
   ];
 
   @override
@@ -35,7 +61,6 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
     super.initState();
     _loadCustomerName();
 
-    // Setup animation for an "unlocking" feel
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -67,24 +92,54 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
     }
   }
 
+  // Helper widget for the status pill
+  Widget _buildStatusPill(String status) {
+    Color backgroundColor;
+    Color textColor;
+
+    switch (status) {
+      case 'Final Approval':
+      case 'Approved':
+        backgroundColor = Colors.green.shade100;
+        textColor = Colors.green.shade800;
+        break;
+      case 'Initial Approval':
+        backgroundColor = Colors.blue.shade100;
+        textColor = Colors.blue.shade800;
+        break;
+      default:
+        backgroundColor = Colors.grey.shade200;
+        textColor = Colors.grey.shade800;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20.0),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        foregroundColor: Colors.black,
+        leading: IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () {}),
+        title: Text('Lendeasy', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+        centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () {
-              // TODO: Handle notifications
-            },
-          ),
+          IconButton(icon: const Icon(Icons.person_outline), onPressed: () {}),
         ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.black,
       ),
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Colors.white,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SlideTransition(
@@ -93,66 +148,80 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
             padding: const EdgeInsets.all(16.0),
             children: [
               // Welcome Message
-              Text(
-                'Welcome, $_customerName!',
-                style: const TextStyle(
+              const Text(
+                'Good afternoon',
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Here is a summary of your loans.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-              ),
               const SizedBox(height: 30),
 
-              // Loan List
+              // Loan List - Redesigned Cards
               ..._loans.map((loan) => Card(
                 margin: const EdgeInsets.symmetric(vertical: 8.0),
-                elevation: 2,
+                elevation: 0.5,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
+                  borderRadius: BorderRadius.circular(16.0),
+                  side: BorderSide(color: Colors.grey.shade200),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.deepPurple.shade50,
-                    child: Icon(loan.icon, color: Colors.deepPurple),
-                  ),
-                  title: Text(loan.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(loan.status, style: TextStyle(color: _getStatusColor(loan.status))),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                child: InkWell(
                   onTap: () {
-                    // TODO: Implement navigation to loan details page
                     print('Tapped on ${loan.title}');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('Tapped on ${loan.title}')),
                     );
                   },
+                  borderRadius: BorderRadius.circular(16.0),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(loan.icon, color: Colors.grey.shade700, size: 28),
+                            const SizedBox(width: 12),
+                            Text(loan.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const Spacer(),
+                            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildStatusPill(loan.status),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Updated on ${loan.lastUpdated}',
+                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              loan.amount,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              )),
+              )).toList(),
             ],
           ),
         ),
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Active':
-        return Colors.green;
-      case 'Pending Approval':
-        return Colors.orange;
-      case 'Closed':
-        return Colors.grey;
-      default:
-        return Colors.black;
-    }
   }
 }
