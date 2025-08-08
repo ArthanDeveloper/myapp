@@ -13,7 +13,7 @@ class _ApiService implements ApiService {
     this._dio, {
     this.baseUrl,
   }) {
-    baseUrl ??= 'https://api.arthan.ai/arthiknew/api';
+    baseUrl ??= 'https://uatapi.arthan.ai/arthik/api/v2';
   }
 
   final Dio _dio;
@@ -21,16 +21,16 @@ class _ApiService implements ApiService {
   String? baseUrl;
 
   @override
-  Future<void> getOtp(OtpRequestModel request) async {
+  Future<dynamic> getOtp(Map<String, dynamic> mobileNumber) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final _data = <String, dynamic>{};
-    _data.addAll(request.toJson());
-    await _dio.fetch<void>(_setStreamType<void>(Options(
+    final Map<String, dynamic> _data =  mobileNumber;
+    final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
       method: 'POST',
       headers: _headers,
       extra: _extra,
+      contentType: 'application/json',
     )
         .compose(
           _dio.options,
@@ -38,11 +38,8 @@ class _ApiService implements ApiService {
           queryParameters: queryParameters,
           data: _data,
         )
-        .copyWith(
-            baseUrl: _combineBaseUrls(
-          _dio.options.baseUrl,
-          baseUrl,
-        ))));
+        .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    return _result.data;
   }
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
@@ -56,22 +53,5 @@ class _ApiService implements ApiService {
       }
     }
     return requestOptions;
-  }
-
-  String _combineBaseUrls(
-    String dioBaseUrl,
-    String? baseUrl,
-  ) {
-    if (baseUrl == null || baseUrl.trim().isEmpty) {
-      return dioBaseUrl;
-    }
-
-    final url = Uri.parse(baseUrl);
-
-    if (url.isAbsolute) {
-      return url.toString();
-    }
-
-    return Uri.parse(dioBaseUrl).resolveUri(url).toString();
   }
 }

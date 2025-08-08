@@ -1,13 +1,12 @@
-import 'package:retrofit/retrofit.dart';
+import 'package:retrofit/retrofit.dart' hide Headers;
 import 'package:dio/dio.dart';
-import '../models/otp_request_model.dart';
 
 part 'api_service.g.dart';
 
-@RestApi(baseUrl: "https://api.arthan.ai/arthik/api")
+@RestApi(baseUrl: "https://uatapi.arthan.ai/arthik/api/v2")
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
   @POST("/getOtp")
-  Future<void> getOtp(@Body() OtpRequestModel request);
+  Future<dynamic> getOtp(@Body() Map<String, dynamic> mobileNumber);
 }

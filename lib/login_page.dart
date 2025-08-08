@@ -3,7 +3,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:io' show Platform;
-import 'package:myapp/verify_otp_screen.dart'; // Import VerifyOtpScreen
+import 'package:dio/dio.dart';
+import 'package:myapp/services/api_service.dart';
+import 'package:myapp/verify_otp_screen.dart';
 import 'package:mobile_number/mobile_number.dart';
 
 class LoginPage extends StatefulWidget {
@@ -16,17 +18,20 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _mobileNumberController = TextEditingController();
   bool _agreedToTerms1 = true;
+  bool _isLoading = false;
+  late ApiService _apiService;
 
   @override
   void initState() {
     super.initState();
+    final dio = Dio();
+    _apiService = ApiService(dio);
     _mobileNumberController.addListener(_onMobileNumberChanged);
     _autoDetectMobileNumber();
   }
 
   @override
   void dispose() {
-    _mobileNumberController.removeListener(_onMobileNumberChanged);
     _mobileNumberController.dispose();
     super.dispose();
   }
@@ -55,12 +60,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onMobileNumberChanged() {
-    if (_mobileNumberController.text.length == 10 && _agreedToTerms1) {
-      _navigateToVerifyOtp();
+    if (_mobileNumberController.text.length == 10 && _agreedToTerms1 && !_isLoading) {
+      _getOtp();
     }
   }
 
-  void _navigateToVerifyOtp() {
+  void _getOtp() async {
+    if (_isLoading) return;
+
     if (_mobileNumberController.text.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid 10-digit mobile number.')),
@@ -68,11 +75,43 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => VerifyOtpScreen(mobileNumber: _mobileNumberController.text),
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await _apiService.getOtp({
+        'mobileNumber': _mobileNumberController.text,
+      });
+
+      if (response != null && response['apiCode'] == 200) {
+        // Successful API call: Navigate to VerifyOtpScreen
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => VerifyOtpScreen(mobileNumber: _mobileNumberController.text),
+            ),
+          );
+        }
+      } else {
+        // API returned an error, display a message to the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to get OTP. Please try again.')),
+        );
+      }
+    } catch (e) {
+      // Handle DioError or other exceptions
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to get OTP. Please check your connection and try again.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -165,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: _agreedToTerms1 ? _navigateToVerifyOtp : null,
+              onPressed: _agreedToTerms1 ? _getOtp : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
                 backgroundColor: _agreedToTerms1
@@ -175,15 +214,24 @@ class _LoginPageState extends State<LoginPage> {
                   borderRadius: BorderRadius.circular(30.0),
                 ),
               ),
-              child: Text(
-                'Get OTP',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: _agreedToTerms1
-                      ? Colors.white
-                      : Colors.black54,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.0,
+                      ),
+                    )
+                  : Text(
+                      'Get OTP',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: _agreedToTerms1
+                            ? Colors.white
+                            : Colors.black54,
+                      ),
+                    ),
             ),
             const SizedBox(height: 20),
           ],

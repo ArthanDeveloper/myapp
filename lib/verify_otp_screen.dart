@@ -90,7 +90,6 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       );
 
       await _apiService.getOtp(request);
-      
       startTimer();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('A new OTP has been sent.')),
@@ -100,6 +99,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to resend OTP. Please try again.')),
       );
+      startTimer(); //Restart the timer even on error
     } finally {
       if (mounted) {
         setState(() {
@@ -145,6 +145,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               const Spacer(),
               const Icon(Icons.lock_outline, size: 60, color: Colors.green),
               const SizedBox(height: 20),
+
+              // Title and Subtitle
               const Text(
                 'Enter OTP',
                 textAlign: TextAlign.center,
@@ -157,6 +159,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 style: TextStyle(fontSize: 16, color: Colors.grey[600]),
               ),
               const SizedBox(height: 40),
+
+              // OTP Input Field
               Pinput(
                 controller: _otpController,
                 length: 4,
@@ -180,6 +184,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 ],
               ),
               const SizedBox(height: 30),
+
+              // Resend and Call options
               const Text("Didn't receive the OTP?", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 10),
               Row(
@@ -199,6 +205,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                 ],
               ),
               const Spacer(),
+
+              // Continue Button
               ElevatedButton(
                 onPressed: _verifyOtp,
                 style: ElevatedButton.styleFrom(
