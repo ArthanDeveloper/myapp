@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'dart:async';
-import 'package:myapp/search_pan_screen.dart'; // Import for navigation
+import 'package:myapp/search_pan_screen.dart';
 import 'package:dio/dio.dart';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import 'package:myapp/services/api_service.dart';
-import 'package:myapp/models/otp_request_model.dart';
+import 'package:myapp/services/api_service.dart'; //Import ApiService
+import 'package:flutter/foundation.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   final String mobileNumber;
 
   const VerifyOtpScreen({
-    super.key,
+    Key? key,
     required this.mobileNumber,
-  });
+  }) : super(key: key);
 
   @override
   _VerifyOtpScreenState createState() => _VerifyOtpScreenState();
@@ -24,8 +22,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
   final TextEditingController _otpController = TextEditingController();
   late Timer _timer;
   int _start = 30;
-  late ApiService _apiService;
-  bool _isResending = false;
+  late ApiService _apiService; //Declare ApiService
+  bool _isVerifying = false;
+  String? _emulatorRetrievedOtp;
 
   @override
   void initState() {
@@ -33,6 +32,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     startTimer();
     final dio = Dio();
     _apiService = ApiService(dio);
+    if (kDebugMode) { // Only in debug mode, try to simulate OTP retrieval
+      // Simulate OTP Retrieval (for debug/emulator purposes only)
+      _simulateOtpRetrieval();
+    }
   }
 
   @override
@@ -47,77 +50,74 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
       _start = 30;
     });
     const oneSec = Duration(seconds: 1);
-    _timer = Timer.periodic(
-      oneSec,
-      (Timer timer) {
-        if (_start == 0) {
-          setState(() {
-            timer.cancel();
-          });
-        } else {
-          setState(() {
-            _start--;
-          });
-        }
-      },
-    );
-  }
-
-  Future<String> _getDeviceId() async {
-    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    // This is a simplified version. In a real app, you would handle iOS as well.
-    final androidInfo = await deviceInfo.androidInfo;
-    return androidInfo.id;
-  }
-
-  Future<String> _getAppVersion() async {
-    final PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    return packageInfo.version;
-  }
-
-  Future<void> _resendOtp() async {
-    setState(() {
-      _isResending = true;
-    });
-
-    try {
-      final String deviceId = await _getDeviceId();
-      final String appVersion = await _getAppVersion();
-      final OtpRequestModel request = OtpRequestModel(
-        mobileNumber: widget.mobileNumber,
-        deviceId: deviceId,
-        appVersion: appVersion,
-      );
-
-      await _apiService.getOtp(request);
-      startTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A new OTP has been sent.')),
-      );
-    } catch (e) {
-      print(e);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to resend OTP. Please try again.')),
-      );
-      startTimer(); //Restart the timer even on error
-    } finally {
-      if (mounted) {
+    _timer = Timer.periodic(oneSec, (Timer timer) {
+      if (_start == 0) {
         setState(() {
-          _isResending = false;
+          timer.cancel();
+        });
+      } else {
+        setState(() {
+          _start--;
         });
       }
+    });
+  }
+
+  // Method to simulate OTP retrieval (for debug/emulator purposes only)
+  Future<void> _simulateOtpRetrieval() async {
+    // Replace this with your actual method to get OTP (e.g., read from a file, use a debug API endpoint)
+    // In this example, let's just set a static OTP for testing
+    await Future.delayed(const Duration(seconds: 1)); //Simulate network delay
+    if(mounted){
+    setState(() {
+      _emulatorRetrievedOtp = '1234';
+    });
+    }
+    print('Simulated OTP: $_emulatorRetrievedOtp');
+  }
+
+  void _fillOtp() {
+    if (_emulatorRetrievedOtp != null) {
+      _otpController.text = _emulatorRetrievedOtp!;
     }
   }
 
-  void _verifyOtp() {
-    if (_otpController.text.length == 4) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => SearchPANScreen()),
-      );
-    } else {
+  Future<void> _verifyOtp() async {
+    if (_otpController.text.length != 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter the complete OTP.')),
       );
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+    });
+
+    try {
+      final response = await _apiService.getOtp({
+        'mobileNumber': widget.mobileNumber,
+        'otp': _otpController.text,
+      });
+
+      if (response != null && response['apiCode'] == 200) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => SearchPANScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Incorrect OTP. Please try again.')),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to verify OTP. Please check your connection.')),
+      );
+    } finally {
+      setState(() {
+        _isVerifying = false;
+      });
     }
   }
 
@@ -185,30 +185,37 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Resend and Call options
               const Text("Didn't receive the OTP?", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
               const SizedBox(height: 10),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton.icon(
-                    onPressed: _start > 0 || _isResending ? null : _resendOtp,
-                    icon: _isResending
+                    onPressed: _start > 0 || _isVerifying ? null : () {
+                      // TODO: Implement resend OTP logic
+                      startTimer();
+                    },
+                    icon: _isVerifying
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2.0),
+                            child: CircularProgressIndicator(strokeWidth: 2.0, color: Colors.white),
                           )
                         : const Icon(Icons.refresh),
                     label: const Text('Resend'),
                   ),
                 ],
               ),
+               if (_emulatorRetrievedOtp != null)
+                  ElevatedButton(
+                    onPressed: _fillOtp,
+                    child: const Text('Fill OTP (Debug Only)'),
+                  ),
               const Spacer(),
 
               // Continue Button
               ElevatedButton(
-                onPressed: _verifyOtp,
+                onPressed: _isVerifying ? null : _verifyOtp,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   backgroundColor: Colors.grey[300],
