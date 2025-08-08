@@ -95,7 +95,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     });
 
     try {
-      final response = await _apiService.getOtp({
+      final response = await _apiService.verifyOtp({
         'mobileNumber': widget.mobileNumber,
         'otp': _otpController.text,
       });

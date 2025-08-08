@@ -1,4 +1,4 @@
-import 'package:retrofit/retrofit.dart' hide Headers;
+import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
 part 'api_service.g.dart';
@@ -8,5 +8,9 @@ abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
   @POST("/getOtp")
+ 
   Future<dynamic> getOtp(@Body() Map<String, dynamic> mobileNumber);
+
+  @POST("/verifyOtp")
+  Future<dynamic> verifyOtp(@Body() Map<String, dynamic> verificationData);
 }
