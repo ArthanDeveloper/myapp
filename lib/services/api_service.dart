@@ -8,9 +8,14 @@ abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
 
   @POST("/getOtp")
- 
   Future<dynamic> getOtp(@Body() Map<String, dynamic> mobileNumber);
 
   @POST("/verifyOtp")
   Future<dynamic> verifyOtp(@Body() Map<String, dynamic> verificationData);
+
+  @GET("/fetchCustId")
+  Future<dynamic> fetchCustId(
+    @Query('id_type') String idType,
+    @Query('id_val') String idVal,
+  );
 }

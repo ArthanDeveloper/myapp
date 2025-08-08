@@ -25,7 +25,7 @@ class _ApiService implements ApiService {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    final Map<String, dynamic> _data = mobileNumber;
+   Map<String, dynamic> _data = mobileNumber;
     final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
       method: 'POST',
       headers: _headers,
@@ -58,6 +58,28 @@ class _ApiService implements ApiService {
         .compose(
           _dio.options,
           '/verifyOtp',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = _result.data;
+    return value;
+  }
+
+  @override
+  Future<dynamic> fetchCustId(String idType, String idVal) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{r'id_type': idType, r'id_val': idVal};
+    final _headers = <String, dynamic>{};
+    final Map<String, dynamic>? _data = null;
+    final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
+      method: 'GET',
+      headers: _headers,
+      extra: _extra,
+    )
+        .compose(
+          _dio.options,
+          '/fetchCustId',
           queryParameters: queryParameters,
           data: _data,
         )
