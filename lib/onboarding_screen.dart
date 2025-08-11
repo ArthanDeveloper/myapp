@@ -62,7 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
               ),
               const SizedBox(height: 20.0),
               Text(
-                'Your Trusted Financial Partner. We are a registered NBFC under the RBI.',
+                'Your Trusted Financial Partner. We are a registered located in Mumbai NBFC under the RBI.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
