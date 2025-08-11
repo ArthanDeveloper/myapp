@@ -220,7 +220,7 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
                     ),
                   ),
                 ),
-              )).toList(),
+              )),
             ],
           ),
         ),
