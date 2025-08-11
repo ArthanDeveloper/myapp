@@ -60,7 +60,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _onMobileNumberChanged() {
-    if (_mobileNumberController.text.length == 10 && _agreedToTerms1 && !_isLoading) {
+    if (_mobileNumberController.text.length == 10 &&
+        _agreedToTerms1 &&
+        !_isLoading) {
       _getOtp();
     }
   }
@@ -70,7 +72,9 @@ class _LoginPageState extends State<LoginPage> {
 
     if (_mobileNumberController.text.length != 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid 10-digit mobile number.')),
+        const SnackBar(
+          content: Text('Please enter a valid 10-digit mobile number.'),
+        ),
       );
       return;
     }
@@ -89,7 +93,8 @@ class _LoginPageState extends State<LoginPage> {
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (context) => VerifyOtpScreen(mobileNumber: _mobileNumberController.text),
+              builder: (context) =>
+                  VerifyOtpScreen(mobileNumber: _mobileNumberController.text),
             ),
           );
         }
@@ -103,7 +108,11 @@ class _LoginPageState extends State<LoginPage> {
       // Handle DioError or other exceptions
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to get OTP. Please check your connection and try again.')),
+        const SnackBar(
+          content: Text(
+            'Failed to get OTP. Please check your connection and try again.',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -117,10 +126,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
@@ -143,10 +149,7 @@ class _LoginPageState extends State<LoginPage> {
             Text(
               'Linked to your bank account',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             ),
             const SizedBox(height: 40),
             Container(
@@ -188,13 +191,19 @@ class _LoginPageState extends State<LoginPage> {
                 TextSpan(
                   text: 'Terms and Conditions',
                   style: const TextStyle(color: Colors.blue),
-                  recognizer: TapGestureRecognizer()..onTap = () {/* TODO */},
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      /* TODO */
+                    },
                 ),
                 const TextSpan(text: ', '),
                 TextSpan(
                   text: 'Privacy Policy',
                   style: const TextStyle(color: Colors.blue),
-                  recognizer: TapGestureRecognizer()..onTap = () {/* TODO */},
+                  recognizer: TapGestureRecognizer()
+                    ..onTap = () {
+                      /* TODO */
+                    },
                 ),
                 const TextSpan(
                   text:
@@ -227,9 +236,7 @@ class _LoginPageState extends State<LoginPage> {
                       'Get OTP',
                       style: TextStyle(
                         fontSize: 16,
-                        color: _agreedToTerms1
-                            ? Colors.white
-                            : Colors.black54,
+                        color: _agreedToTerms1 ? Colors.white : Colors.black54,
                       ),
                     ),
             ),
@@ -248,10 +255,7 @@ class _LoginPageState extends State<LoginPage> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Checkbox(
-          value: value,
-          onChanged: onChanged,
-        ),
+        Checkbox(value: value, onChanged: onChanged),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(top: 12.0),

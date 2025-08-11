@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/login_page.dart';
 
 class OnboardingScreen3 extends StatefulWidget {
+  const OnboardingScreen3({super.key});
+
   @override
   _OnboardingScreen3State createState() => _OnboardingScreen3State();
 }
