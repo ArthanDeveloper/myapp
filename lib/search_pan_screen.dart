@@ -210,12 +210,12 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
               if (_customerList.isNotEmpty)
               Expanded(
                child: ListView.builder(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(1.0),
                 itemCount: _customerList.length,
                 itemBuilder: (context, index) {
                   final profile = _customerList[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    margin: const EdgeInsets.symmetric(vertical: 1.0),
                     elevation: 2,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.0),
@@ -227,7 +227,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                         backgroundColor: Colors.black,
                         child: Icon(Icons.person, color: Colors.white),
                       ),
-                      title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16)),
+                      title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       subtitle: Text(profile.maskedMobile),
                       onTap: () => _onProfileSelected(profile.id),  // Select profile on tap,
                     ),
