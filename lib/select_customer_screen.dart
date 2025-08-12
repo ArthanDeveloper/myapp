@@ -7,34 +7,33 @@ class CustomerProfile {
   final String maskedMobile;
   final String id;
 
-  CustomerProfile({
-    required this.name,
-    required this.maskedMobile,
-    required this.id,
-  });
+  CustomerProfile({required this.name, required this.maskedMobile, required this.id});
 }
 
 class SelectCustomerScreen extends StatefulWidget {
-  const SelectCustomerScreen({super.key});
+  final String profileId;
+  const SelectCustomerScreen({
+    super.key,  required this.profileId,
+  });
 
   @override
   _SelectCustomerScreenState createState() => _SelectCustomerScreenState();
 }
 
 class _SelectCustomerScreenState extends State<SelectCustomerScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    // Print the profile id to the console when the screen loads
+    print('Selected profile ID: ${widget.profileId}');
+  }
+
   // Dummy data for demonstration
   final List<CustomerProfile> _profiles = [
-    CustomerProfile(
-      name: 'Kathleen Romero',
-      maskedMobile: '+91 XXXXXX0221',
-      id: '1',
-    ),
+    CustomerProfile(name: 'Kathleen Romero', maskedMobile: '+91 XXXXXX0221', id: '1'),
     CustomerProfile(name: 'John Doe', maskedMobile: '+91 XXXXXX1234', id: '2'),
-    CustomerProfile(
-      name: 'Jane Smith',
-      maskedMobile: '+91 XXXXXX5678',
-      id: '3',
-    ),
+    CustomerProfile(name: 'Jane Smith', maskedMobile: '+91 XXXXXX5678', id: '3'),
   ];
 
   String? _selectedProfileId;
@@ -51,7 +50,7 @@ class _SelectCustomerScreenState extends State<SelectCustomerScreen> {
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const AccountsListScreen()),
       );
-      print('Selected profile ID: $_selectedProfileId');
+    
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a profile to continue.')),
