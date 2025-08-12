@@ -9,7 +9,8 @@ class OnboardingScreen extends StatefulWidget {
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerProviderStateMixin {
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _opacityAnimation;
 
@@ -22,11 +23,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
       vsync: this,
     );
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_controller);
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(_controller);
     _controller.forward();
 
     Timer(const Duration(seconds: 2), () {
-      if (mounted) { // Check if the widget is still mounted
+      if (mounted) {
+        // Check if the widget is still mounted
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const OnboardingScreen2()),
         );
@@ -62,12 +67,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerPr
               ),
               const SizedBox(height: 20.0),
               Text(
-                'Your Trusted Financial Partner. We are a registered located in Mumbai NBFC under the RBI.',
+                'Your Trusted Financial Partner. We are a registered NBFC under the RBI.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 16.0, color: Colors.grey[600]),
               ),
               const SizedBox(height: 40.0),
               Expanded(
