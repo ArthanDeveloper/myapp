@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:myapp/select_customer_screen.dart';
 import 'package:myapp/services/api_service.dart'; // Import ApiService
 import 'package:dio/dio.dart'; // Import Dio
 import 'package:flutter/foundation.dart'; // Import for debugPrint
+import 'package:flutter/services.dart';
 
 //Data model for CustomerProfile
 class CustomerProfile {
@@ -36,6 +36,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
 
   @override
   void dispose() {
+    _panAccountController.removeListener(_updateSearchType);
     _panAccountController.dispose();
     super.dispose();
   }
@@ -73,21 +74,21 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
           // Access the list of customer details
           List<dynamic> customersData = response['customersList'];
           // Clear existing list
-          _customerList = [];
-
+            _customerList = [];
+          setState(() {});
           // Map dynamic list to CustomerProfile objects
           for (var item in customersData) {
             // Map item data using correct keys
-
-            _customerList.add(
-              CustomerProfile(
-                name: item['full_name'] ?? 'Name not available',
-                maskedMobile: item['phone1'] ?? 'Mobile not available',
-                id: item['customer_id']?.toString() ?? 'ID not available',
-              ),
-            );
+         setState(() {
+        _customerList.add(
+          CustomerProfile(
+            name: item['full_name'] ?? 'Name not available',
+            maskedMobile: item['phone1'] ?? 'Mobile not available',
+            id: item['customer_id']?.toString() ?? 'ID not available',
+          ),
+        );
+         });
           }
-          setState(() {}); // Trigger UI update with the new data
         } else {
           // Display an error if the API response isn't a map with customersList
           ScaffoldMessenger.of(context).showSnackBar(
@@ -106,14 +107,8 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
           _isLoading = false; // Hide loading indicator
         });
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Please enter a valid PAN or Loan Account Number.')),
-      );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +144,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
-                  color: Colors.grey,
+                  color: Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 40.0),
@@ -165,12 +160,12 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                       ),
                       keyboardType: TextInputType.text, // Could be alphanumeric
                       inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10)
+                        LengthLimitingTextInputFormatter(12),
+                        UpperCaseTextFormatter(),
                       ],
-                       onChanged: (value) {
-                          _updateSearchType(); // Now it's being called on text changes!
-                        },
+                      onChanged: (value) {
+                        _updateSearchType();
+                      },
                     ),
                   ),
                   const SizedBox(width: 10.0),
@@ -184,9 +179,16 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                         borderRadius: BorderRadius.circular(8.0),
                       ),
                     ),
-                    child: const Text(
-                      'Search',
-                      style: TextStyle(fontSize: 18.0),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Icon(Icons.search),
+                        SizedBox(width: 5),
+                        Text(
+                          'Search',
+                          style: TextStyle(fontSize: 18.0),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -199,52 +201,66 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
               // Display Customer List
               if (_customerList.isNotEmpty)
                 Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: _customerList.length,
-                    itemBuilder: (context, index) {
-                      final profile = _customerList[index];
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
-                        elevation: 2,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                          leading: const CircleAvatar(
-                            backgroundColor: Colors.black,
-                            child: Icon(Icons.person, color: Colors.white),
-                          ),
-                          title: Text(profile.name,  style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16)),
-                          subtitle: Text(profile.maskedMobile),
-                        ),
-                      );
+                 child:  Column(
+                 children: [
+                   Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(10.0),
+                        itemCount: _customerList.length,
+                        itemBuilder: (context, index) {
+                          final profile = _customerList[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 5.0),
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                              leading: const CircleAvatar(
+                                backgroundColor: Colors.black,
+                                child: Icon(Icons.person, color: Colors.white),
+                              ),
+                              title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16)),
+                              subtitle: Text(profile.maskedMobile),
+                            ),
+                          );
+                        },
+                      ),
+                   ),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const SelectCustomerScreen()));
                     },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 15.0),
+                      backgroundColor: Colors.deepOrange,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: const Text(
+                      'CONTINUE',
+                      style: TextStyle(fontSize: 18.0),
+                    ),
                   ),
-                ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (context) => const SelectCustomerScreen()));
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15.0),
-                  backgroundColor: Colors.deepOrange,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                child: const Text(
-                  'CONTINUE',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              ),
+                 ])) else const SizedBox(),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }
