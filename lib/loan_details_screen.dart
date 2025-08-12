@@ -102,7 +102,7 @@ class LoanDetailsScreen extends StatelessWidget {
                       color: tx.isCredit ? Colors.green.shade800 : Colors.black,
                     ),
                   ),
-                )).toList(),
+                )),
               ],
             ),
           ),

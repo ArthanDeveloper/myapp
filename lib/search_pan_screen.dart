@@ -12,6 +12,8 @@ class CustomerProfile {
 }
 
 class SearchPANScreen extends StatefulWidget {
+  const SearchPANScreen({super.key});
+
   @override
   _SearchPANScreenState createState() => _SearchPANScreenState();
 }

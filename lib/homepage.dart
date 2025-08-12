@@ -131,7 +131,7 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () {}),
-        title: Text('Lendeasy', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
+        title: Text('Arthik', style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
           IconButton(icon: const Icon(Icons.person_outline), onPressed: () {}),
@@ -220,7 +220,7 @@ class _HomepageState extends State<Homepage> with SingleTickerProviderStateMixin
                     ),
                   ),
                 ),
-              )).toList(),
+              )),
             ],
           ),
         ),
