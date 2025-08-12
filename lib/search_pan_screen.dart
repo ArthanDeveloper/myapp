@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/select_customer_screen.dart';
 import 'package:myapp/services/api_service.dart'; // Import ApiService
 import 'package:dio/dio.dart'; // Import Dio
 
@@ -12,15 +13,13 @@ class CustomerProfile {
 }
 
 class SearchPANScreen extends StatefulWidget {
-  const SearchPANScreen({super.key});
-
   @override
   _SearchPANScreenState createState() => _SearchPANScreenState();
 }
 
 class _SearchPANScreenState extends State<SearchPANScreen> {
   final TextEditingController _panAccountController = TextEditingController();
-  String _searchType = ''; // Internal variable to store search type
+  String? _searchType = ''; // Internal variable to store search type
   List<CustomerProfile> _customerList = []; // List to hold customer data
   bool _isLoading = false;
   late ApiService _apiService;
@@ -44,11 +43,11 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
     final text = _panAccountController.text;
     setState(() {
       if (text.length == 10) {
-        _searchType = 'PAN';
+        _searchType = 'pan_no';
       } else if (text.length > 10) {
-        _searchType = 'AcNo';
+        _searchType = 'account_no';
       } else {
-        _searchType = ''; // Reset if length does not match criteria
+        _searchType = null; // Reset if length does not match criteria
       }
     });
     print('Current Search Type: $_searchType'); // For debugging
@@ -60,28 +59,32 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
     });
 
     try {
-      if (_panAccountController.text.isNotEmpty && _searchType.isNotEmpty) {
-        final response = await _apiService.fetchCustId(_searchType, _panAccountController.text);
+      if (_panAccountController.text.isNotEmpty && _searchType != null) {
+        final response = await _apiService.fetchCustId(_searchType!, _panAccountController.text);
 
-        if (response != null && response is List) {
+        // Access the customersList from the response
+        if (response != null && response is Map<String, dynamic> && response.containsKey('customersList')) {
+
+          // Access the list of customer details
+          List<dynamic> customersData = response['customersList'];
           // Clear existing list
           _customerList = [];
 
           // Map dynamic list to CustomerProfile objects
-          for (var item in response) {
-            // Ensure item is a Map and has the expected keys before accessing it
+          for (var item in customersData) {
+              // Map item data using correct keys
               _customerList.add(
                 CustomerProfile(
-                  name: item['name'] ?? 'Name not available',
-                  maskedMobile: item['maskedMobile'] ?? 'Mobile not available',
-                  id: item['id']?.toString() ?? 'ID not available',
+                  name: item['full_name'] ?? 'Name not available',
+                  maskedMobile: item['phone1'] ?? 'Mobile not available',
+                  id: item['customer_id']?.toString() ?? 'ID not available',
                 ),
               );
-          }
 
+          }
           setState(() {}); // Trigger UI update with the new data
         } else {
-          // Display an error if the API response isn't a list or is null
+          // Display an error if the API response isn't a map with customersList
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to load customer data. Please try again.')),
           );
@@ -155,15 +158,6 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                     ),
                     keyboardType: TextInputType.text, // Could be alphanumeric
                   ),
-                  SizedBox(height: 20.0),
-                  Text(
-                    'Detected Type: $_searchType',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.blueGrey,
-                    ),
-                  ),
                   SizedBox(height: 40.0),
                   ElevatedButton(
                     onPressed: _onContinue,
@@ -184,7 +178,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                 ],
               ),
             ),
-            if (_isLoading) // Show loading indicator while data is being fetched
+            if (_isLoading)
               const Center(
                 child: CircularProgressIndicator(),
               ),
