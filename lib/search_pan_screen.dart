@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:myapp/select_customer_screen.dart';
+import 'package:myapp/accounts_list_screen.dart';
 import 'package:myapp/services/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +15,8 @@ class CustomerProfile {
 }
 
 class SearchPANScreen extends StatefulWidget {
+  const SearchPANScreen({super.key});
+
   @override
   _SearchPANScreenState createState() => _SearchPANScreenState();
 }
@@ -26,7 +28,6 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
   bool _isLoading = false;
   late ApiService _apiService;
   String? _selectedCustomerId;
-
 
   @override
   void initState() {
@@ -51,16 +52,17 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
       } else if (text.length > 10) {
         _searchType = 'AcNo';
       } else {
-        _searchType = null;
+        _searchType = null; // Reset if length does not match criteria
       }
     });
-    print('Current Search Type: $_searchType');
+    print('Current Search Type: $_searchType'); // For debugging
   }
+
     void _onProfileSelected(String? profileId) {
-    setState(() {
-      _selectedCustomerId = profileId;
-    });
-  }
+        setState(() {
+          _selectedCustomerId = profileId;
+        });
+      }
 
   Future<void> _onContinue() async {
     // Validate that the input is not empty and a type has been determined
@@ -81,21 +83,21 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
           // Access the list of customer details
           List<dynamic> customersData = response['customersList'];
           // Clear existing list
-      setState(() {
+         setState(() {
  _customerList = [];
  });
           // Map dynamic list to CustomerProfile objects
           for (var item in customersData) {
-
-          setState(() {
-           _customerList.add(
-            CustomerProfile(
-              name: item['full_name'] ?? 'Name not available',
-              maskedMobile: item['phone1'] ?? 'Mobile not available',
-              id: item['customer_id']?.toString() ?? 'ID not available',
-            ),
-          );
-           });
+            // Map item data using correct keys
+        setState(() {
+            _customerList.add(
+              CustomerProfile(
+                name: item['full_name'] ?? 'Name not available',
+                maskedMobile: item['phone1'] ?? 'Mobile not available',
+                id: item['customer_id']?.toString() ?? 'ID not available',
+              ),
+            );
+        });
           }
         } else {
           // Display an error if the API response isn't a map with customersList
@@ -117,7 +119,6 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -208,42 +209,45 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                 )),
               // Display Customer List
               if (_customerList.isNotEmpty)
-              Expanded(
-               child: ListView.builder(
-                padding: const EdgeInsets.all(1.0),
-                itemCount: _customerList.length,
-                itemBuilder: (context, index) {
-                  final profile = _customerList[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 1.0),
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
-                    ),
-                    color: _selectedCustomerId == profile.id ? Colors.blue[50] : null,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                      leading: const CircleAvatar(
-                        backgroundColor: Colors.black,
-                        child: Icon(Icons.person, color: Colors.white),
-                      ),
-                      title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      subtitle: Text(profile.maskedMobile),
-                      onTap: () => _onProfileSelected(profile.id),  // Select profile on tap,
-                    ),
-                  );
-                },
-              ),
-             ),  ElevatedButton(
-                onPressed: _selectedCustomerId != null ? () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) =>  SelectCustomerScreen(
-                            profileId: _selectedCustomerId!,
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: _customerList.length,
+                    itemBuilder: (context, index) {
+                      final profile = _customerList[index];
+                      return InkWell(
+                        onTap: () => _onProfileSelected(profile.id),
+                         child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12.0),
+                          ),
+                           color: _selectedCustomerId == profile.id ? Colors.blue[50] : null,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                            leading: const CircleAvatar(
+                              backgroundColor: Colors.black,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+                            title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16)),
+                            subtitle: Text(profile.maskedMobile),
                           ),
                         ),
                       );
-                    } : null,
+                    },
+                  ),
+                ),
+              ElevatedButton(
+                onPressed:  _selectedCustomerId != null   ? () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) =>  AccountsListScreen(
+                        customerId: _selectedCustomerId!,
+                      ),
+                    ),
+                  );
+                } : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15.0),
                   backgroundColor: Colors.deepOrange,

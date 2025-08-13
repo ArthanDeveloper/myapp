@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/set_mpin_screen.dart'; // Import the SetMpinScreen
+import 'package:dio/dio.dart';
+import 'package:myapp/services/api_service.dart';
 
 // Data model for an account, similar to CustomerProfile for design consistency
 class Account {
@@ -11,23 +13,57 @@ class Account {
 }
 
 class AccountsListScreen extends StatefulWidget {
-  const AccountsListScreen({super.key});
+  final String customerId;
+  const AccountsListScreen({Key? key, required this.customerId}) : super(key: key);
 
   @override
   _AccountsListScreenState createState() => _AccountsListScreenState();
 }
 
 class _AccountsListScreenState extends State<AccountsListScreen> {
-  // Dummy data for demonstration of multiple accounts
-  final List<Account> _accounts = [
-    Account(name: 'Savings Account', accountNumber: 'XXXXXX1234', id: 'acc1'),
-    Account(name: 'Current Account', accountNumber: 'XXXXXX5678', id: 'acc2'),
-    Account(name: 'Fixed Deposit', accountNumber: 'XXXXXX9012', id: 'acc3'),
-    Account(name: 'Loan Account', accountNumber: 'XXXXXX3456', id: 'acc4'),
-  ];
-
-  // Using a Set to store selected account IDs for efficient add/remove and uniqueness
+  List<Account> _accounts = [];
+  bool _isLoading = false;
+   late ApiService _apiService;
   final Set<String> _selectedAccountIds = {};
+  @override
+  void initState() {
+    super.initState();
+    print('Received customer ID: ${widget.customerId}');
+    final dio = Dio();
+    _apiService = ApiService(dio);
+    _fetchAccounts();
+  }
+  Future<void> _fetchAccounts() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final response = await _apiService.fetchAccountsByCustomerId(widget.customerId);
+      if (response != null && response is List) {
+        setState(() {
+          _accounts = response.map((item) => Account(
+            name: item['account_type'] ?? 'Account Type not available',
+            accountNumber: item['account_number'] ?? 'Account Number not available',
+            id: item['account_id']?.toString() ?? 'ID not available',
+          )).toList();
+        });
+        print('The accounts length = ${_accounts.length}');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load account data. Please try again.')),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('API fetch failed: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   void _onAccountSelected(bool? isSelected, String accountId) {
     setState(() {
@@ -65,7 +101,12 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
       backgroundColor: Colors.grey[100],
       body: Column(
         children: [
-          Expanded(
+          if (_isLoading)
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ) else Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16.0),
               itemCount: _accounts.length,

@@ -18,4 +18,10 @@ abstract class ApiService {
     @Query('id_type') String idType,
     @Query('id_val') String idVal,
   );
+
+   @GET("/fetchAccountsByCustomerId")
+  Future<dynamic> fetchAccountsByCustomerId(
+    @Query('customer_id') String customerId,
+  );
+
 }
