@@ -21,11 +21,11 @@ class AccountsListScreen extends StatefulWidget {
 }
 
 class _AccountsListScreenState extends State<AccountsListScreen> {
-  List<Account> _accounts = [];
+   List<Account> _accounts = [];
   bool _isLoading = false;
-   late ApiService _apiService;
+  late ApiService _apiService;
   final Set<String> _selectedAccountIds = {};
-  @override
+   @override
   void initState() {
     super.initState();
     print('Received customer ID: ${widget.customerId}');
@@ -39,21 +39,23 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     });
     try {
       final response = await _apiService.fetchAccountsByCustomerId(widget.customerId);
-      if (response != null && response is List) {
-        setState(() {
-          _accounts = response.map((item) => Account(
-            name: item['account_type'] ?? 'Account Type not available',
-            accountNumber: item['account_number'] ?? 'Account Number not available',
-            id: item['account_id']?.toString() ?? 'ID not available',
-          )).toList();
-        });
-        print('The accounts length = ${_accounts.length}');
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to load account data. Please try again.')),
-        );
-      }
-    } catch (e) {
+        if (response != null && response is Map<String, dynamic> && response.containsKey('accountsList')) {
+      List<dynamic> accountsData = response['accountsList'];
+
+      setState(() {
+        _accounts = accountsData.map((item) => Account(
+          name: item['account_name'] ?? 'Account Type not available',
+          accountNumber: item['account_number'] ?? 'Account Number not available',
+          id: item['account_id']?.toString() ?? 'ID not available',
+        )).toList();
+      });
+      print('The accounts length = ${_accounts.length}');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to load account data. Please try again.')),
+      );
+    }
+     } catch (e) {
       print(e);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('API fetch failed: ${e.toString()}')),
@@ -101,8 +103,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
       backgroundColor: Colors.grey[100],
       body: Column(
         children: [
-          if (_isLoading)
-            const Expanded(
+       if (_isLoading)  const Expanded(
               child: Center(
                 child: CircularProgressIndicator(),
               ),
