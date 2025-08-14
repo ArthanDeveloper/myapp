@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:myapp/set_mpin_screen.dart'; // Import the SetMpinScreen
 import 'package:dio/dio.dart';
 import 'package:myapp/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Data model for an account, similar to CustomerProfile for design consistency
 class Account {
@@ -21,7 +23,7 @@ class AccountsListScreen extends StatefulWidget {
 }
 
 class _AccountsListScreenState extends State<AccountsListScreen> {
-   List<Account> _accounts = [];
+  List<Account> _accounts = [];
   bool _isLoading = false;
   late ApiService _apiService;
   final Set<String> _selectedAccountIds = {};
@@ -33,6 +35,18 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     _apiService = ApiService(dio);
     _fetchAccounts();
   }
+  //To send data, create a list of a map that is in JSON format.
+  String getAccountListJson(){
+        List jsonArray = [];
+          for (String id in _selectedAccountIds) {
+              // Find the account with a matching ID
+               Account acc = _accounts.firstWhere((element) => element.id == id);
+              //If you dont want to add every value, you can add just the acc id.
+              jsonArray.add({"account_id": acc.id, "customer_id": widget.customerId});
+          }
+         const JsonEncoder encoder = JsonEncoder.withIndent('  ');
+        return encoder.convert({'accountsList': jsonArray});
+  }
   Future<void> _fetchAccounts() async {
     setState(() {
       _isLoading = true;
@@ -42,14 +56,13 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
         if (response != null && response is Map<String, dynamic> && response.containsKey('accountsList')) {
       List<dynamic> accountsData = response['accountsList'];
 
-      setState(() {
-        _accounts = accountsData.map((item) => Account(
-          name: item['account_name'] ?? 'Account Type not available',
-          accountNumber: item['account_number'] ?? 'Account Number not available',
-          id: item['account_id']?.toString() ?? 'ID not available',
-        )).toList();
-      });
-      print('The accounts length = ${_accounts.length}');
+       setState(() {
+         _accounts = accountsData.map((item) => Account(
+           name: item['account_name'] ?? 'Account Type not available',
+           accountNumber: item['account_number'] ?? 'Account Number not available',
+           id: item['account_id']?.toString() ?? 'ID not available',
+         )).toList();
+       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to load account data. Please try again.')),
@@ -77,10 +90,14 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
     });
   }
 
-  void _onContinue() {
+  void _onContinue() async {
+   final prefs = await SharedPreferences.getInstance();
     if (_selectedAccountIds.isNotEmpty) {
-      print('Selected account IDs: $_selectedAccountIds');
+        final jsonData = getAccountListJson();
+        print('Generated JSON: $jsonData'); // This prints the JSON directly
       // Navigate to the SetMpinScreen
+          await prefs.setString('accountList', jsonData);
+
       Navigator.of(context).push(
         MaterialPageRoute(builder: (context) => const SetMpinScreen()),
       );
