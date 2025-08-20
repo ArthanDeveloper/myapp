@@ -8,13 +8,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 //Data model for CustomerProfile
 class CustomerProfile {
-  final String name;
-  final String maskedMobile;
-  final String id;
+  final String full_name;
+  final String account_id;
+  final String customer_id;
   final String pan;
   final String phone1;
 
-  CustomerProfile({required this.name, required this.maskedMobile, required this.id, required this.pan, required this.phone1});
+  CustomerProfile({
+    required this.full_name,
+    required this.account_id,
+    required this.customer_id,
+    required this.pan,
+    required this.phone1,
+  });
 }
 
 class SearchPANScreen extends StatefulWidget {
@@ -29,7 +35,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
   String? _searchType = ''; // Internal variable to store search type
   List<CustomerProfile> _customerList = []; // List to hold customer data
   bool _isLoading = false;
-  bool _isRegistering = false;   late ApiService _apiService;
+  late ApiService _apiService;
   String? _selectedCustomerId;
 
   @override
@@ -76,7 +82,9 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
 
       try {
         final response = await _apiService.fetchCustId(
-            _searchType!, _panAccountController.text);
+          _searchType!,
+          _panAccountController.text,
+        );
         debugPrint('API Response: $response'); // Print the entire response
 
         // Access the customersList from the response
@@ -92,23 +100,25 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
 
           // Map dynamic list to CustomerProfile objects
           for (var item in customersData) {
-              setState(() {
-                _customerList.add(
-                  CustomerProfile(
-                    name: item['full_name'] ?? 'Name not available',
-                    maskedMobile: item['phone1'] ?? 'Mobile not available',
-                    id: item['customer_id']?.toString() ?? 'ID not available',
-                       pan: item['pan'] ?? 'PAN not available',
-                       phone1: item['phone1'] ?? 'Mobile not available',
-                  ),
-                );
-              });
+            setState(() {
+              _customerList.add(
+                CustomerProfile(
+                  full_name: item['full_name'] ?? 'Name not available',
+                  phone1: item['phone1'] ?? 'Mobile not available',
+                  customer_id:
+                      item['customer_id']?.toString() ?? 'ID not available',
+                  pan: item['pan'] ?? 'PAN not available',
+                  account_id: item['account_id'] ?? 'Account ID not available',
+                ),
+              );
+            });
           }
         } else {
           // Display an error if the API response isn't a map with customersList
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Failed to load customer data. Please try again.')),
+              content: Text('Failed to load customer data. Please try again.'),
+            ),
           );
         }
       } catch (e) {
@@ -127,12 +137,13 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
 
   Future<void> _registerUser(CustomerProfile profile) async {
     setState(() {
-      _isRegistering = true; // Show registering indicator (if needed)
+      // Show registering indicator (if needed)
     });
-      final prefs = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
     try {
-      final String deviceId =  "12455855" ;//await _getDeviceId();  Removed getDeviceId to simplify. //todo implement this again
-      final String customerName = profile.name;
+      final String deviceId =
+          "12455855"; //await _getDeviceId();  Removed getDeviceId to simplify. //todo implement this again
+      final String customerName = profile.full_name;
       final String panNo = profile.pan;
       final String mobNo = profile.phone1;
 
@@ -147,22 +158,27 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
         "customerName": customerName,
         "panNo": panNo,
       });
-       debugPrint('registerUser API Response: $registerResponse');
+      debugPrint('registerUser API Response: $registerResponse');
       if (registerResponse['apiCode'] == 200) {
-          //store customerName
-          await prefs.setString('customerName', profile.name);
-          await prefs.setString('customerMobile', profile.maskedMobile);
+        //store customerName
+        await prefs.setString('customerName', profile.full_name);
+        await prefs.setString('customerMobile', profile.phone1);
+        await prefs.setString("customerId", profile.customer_id);
 
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => AccountsListScreen(
-              customerId: _selectedCustomerId!,
-            ),
+            builder:
+                (context) =>
+                    AccountsListScreen(customerId: _selectedCustomerId!),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('There was an error during User Registration, Please try again.')),
+          const SnackBar(
+            content: Text(
+              'There was an error during User Registration, Please try again.',
+            ),
+          ),
         );
       }
     } catch (e) {
@@ -172,7 +188,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
       );
     } finally {
       setState(() {
-        _isRegistering = false; // Hide registering indicator (if needed)
+        // Hide registering indicator (if needed)
       });
     }
   }
@@ -209,10 +225,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
               const Text(
                 'Enter your PAN or Loan Account number to find your details.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 16.0, color: Colors.grey),
               ),
               const SizedBox(height: 40.0),
               Row(
@@ -226,10 +239,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                         prefixIcon: Icon(Icons.credit_card),
                       ),
                       keyboardType: TextInputType.text, // Could be alphanumeric
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(12),
-                        UpperCaseTextFormatter(),
-                      ],
+                      inputFormatters: [LengthLimitingTextInputFormatter(12)],
                       onChanged: (value) {
                         _updateSearchType();
                       },
@@ -249,12 +259,8 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: <Widget>[
-                        Icon(Icons.search),
                         SizedBox(width: 5),
-                        Text(
-                          'Search',
-                          style: TextStyle(fontSize: 18.0),
-                        ),
+                        Text('Search', style: TextStyle(fontSize: 18.0)),
                       ],
                     ),
                   ),
@@ -262,68 +268,76 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
               ),
               const SizedBox(height: 20.0),
               if (_isLoading)
-                const Padding(padding: EdgeInsets.only(top: 20),child: Center(
-                  child: CircularProgressIndicator(),
-                )),
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               if (_customerList.isNotEmpty)
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(1.0),
                     itemCount: _customerList.length,
                     itemBuilder: (context, index) {
                       final profile = _customerList[index];
                       return InkWell(
-                        onTap: () => _onProfileSelected(profile.id),
-                         child: Card(
+                        onTap: () => _onProfileSelected(profile.customer_id),
+                        child: Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12.0),
                           ),
-                           color: _selectedCustomerId == profile.id ? Colors.blue[50] : null,
+                          color:
+                              _selectedCustomerId == profile.customer_id
+                                  ? Colors.blue[50]
+                                  : null,
                           child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10.0,
+                              horizontal: 1.0,
+                            ),
                             leading: const CircleAvatar(
                               backgroundColor: Colors.black,
                               child: Icon(Icons.person, color: Colors.white),
                             ),
-                            title: Text(profile.name, style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16)),
-                            subtitle: Text(profile.maskedMobile),
+                            title: Text(
+                              profile.full_name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.normal,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(profile.phone1),
                           ),
                         ),
                       );
                     },
                   ),
                 ),
-               if (_customerList.isNotEmpty &&  _selectedCustomerId != null)  ElevatedButton(
-                 onPressed:  () { if(_selectedCustomerId != null) {  final selectedProfile = _customerList.firstWhere((profile) => profile.id == _selectedCustomerId);  _registerUser(selectedProfile); } }   ,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15.0),
-                  backgroundColor: Colors.deepOrange,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+              if (_customerList.isNotEmpty && _selectedCustomerId != null)
+                ElevatedButton(
+                  onPressed: () {
+                    if (_selectedCustomerId != null) {
+                      final selectedProfile = _customerList.firstWhere(
+                        (profile) => profile.customer_id == _selectedCustomerId,
+                      );
+                      _registerUser(selectedProfile);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15.0),
+                    backgroundColor: Colors.deepOrange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
                   ),
+                  child: const Text('NEXT', style: TextStyle(fontSize: 18.0)),
                 ),
-                child: const Text(
-                  'NEXT',
-                  style: TextStyle(fontSize: 18.0),
-                ),
-              ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class UpperCaseTextFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
-    return TextEditingValue(
-      text: newValue.text.toUpperCase(),
-      selection: newValue.selection,
     );
   }
 }
