@@ -66,7 +66,7 @@ class _ApiService implements ApiService {
     return value;
   }
 
-   @override
+  @override
   Future<dynamic> fetchCustId(String idType, String idVal) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{r'id_type': idType, r'id_val': idVal};
@@ -110,7 +110,7 @@ class _ApiService implements ApiService {
     return value;
   }
 
-  @override
+    @override
   Future<dynamic> registerUser(Map<String, dynamic> userData) async {
     const _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
@@ -132,6 +132,30 @@ class _ApiService implements ApiService {
     final value = _result.data;
     return value;
   }
+
+   @override
+  Future<dynamic> saveArthikAccounts(String userData) async {
+    const _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = userData;
+    final _result = await _dio.fetch(_setStreamType<dynamic>(Options(
+      method: 'POST',
+      headers: _headers,
+      extra: _extra,
+      contentType: 'application/json',
+    )
+        .compose(
+          _dio.options,
+          '/saveArthikAccounts',
+          queryParameters: queryParameters,
+          data: _data,
+        )
+        .copyWith(baseUrl: baseUrl ?? _dio.options.baseUrl)));
+    final value = _result.data;
+    return value;
+  }
+
 
   RequestOptions _setStreamType<T>(RequestOptions requestOptions) {
     if (T != dynamic &&

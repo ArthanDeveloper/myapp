@@ -16,13 +16,13 @@ class Account {
   final String opened_on_value_date;
 
   Account({
-  required this.branch_code, 
-  required this.branch_name,
-  required this.account_name, 
-  required this.account_id,
-  required this.customer_id, 
-  required this.product_code,
-  required this.opened_on_value_date
+    required this.branch_code,
+    required this.branch_name,
+    required this.account_name,
+    required this.account_id,
+    required this.customer_id,
+    required this.product_code,
+    required this.opened_on_value_date,
   });
 }
 
@@ -51,15 +51,52 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
   //To send data, create a list of a map that is in JSON format.
   String getAccountListJson() {
-    List jsonArray = [];
+    List<Map<String, dynamic>> jsonArray = [];
     for (String id in _selectedAccountIds) {
       // Find the account with a matching ID
       Account acc = _accounts.firstWhere((element) => element.account_id == id);
       //If you dont want to add every value, you can add just the acc id.
-      jsonArray.add({"account_id": acc.account_id, "customer_id": widget.customerId});
+      jsonArray.add({
+        "account_id": acc.account_id,
+        "customer_id": widget.customerId,
+      });
     }
-    const JsonEncoder encoder = JsonEncoder.withIndent('  ');
-    return encoder.convert({'accountsList': jsonArray});
+    return jsonEncode({'accountsList': jsonArray});
+  }
+
+  Future<void> _saveArthikAccounts(String jsonData) async {
+    setState(() {
+      _isLoading = true;
+    });
+    final prefs = await SharedPreferences.getInstance();
+    try {
+      final registerResponse = await _apiService.saveArthikAccounts(
+        jsonData,
+      ); //TODO pass data
+      if (registerResponse['apiCode'] == 200) {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const SetMpinScreen()));
+        print("Successfully sent Save Arthik accoutns for new page");
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'An internal erorr has occured with this service please contact admin',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Issue during API Request:  ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _fetchAccounts() async {
@@ -74,7 +111,6 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
           response is Map<String, dynamic> &&
           response.containsKey('accountsList')) {
         List<dynamic> accountsData = response['accountsList'];
-
         setState(() {
           _accounts =
               accountsData
@@ -83,9 +119,13 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                       account_name:
                           item['account_name'] ?? 'Account Type not available',
                       account_id:
-                          item['account_id'] ??
-                          'Account Number not available',
-                      customer_id: item['customer_id']?.toString() ?? 'ID not available', branch_code: '', branch_name: '', product_code: '', opened_on_value_date: '',
+                          item['account_id'] ?? 'Account Number not available',
+                      customer_id:
+                          item['customer_id']?.toString() ?? 'ID not available',
+                      branch_code: '',
+                      branch_name: '',
+                      product_code: '',
+                      opened_on_value_date: '',
                     ),
                   )
                   .toList();
@@ -121,15 +161,10 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
 
   void _onContinue() async {
     final prefs = await SharedPreferences.getInstance();
+    final jsonData = getAccountListJson();
+    print('JSON data to send: $jsonData'); // This prints the JSON
     if (_selectedAccountIds.isNotEmpty) {
-      final jsonData = getAccountListJson();
-      print('Generated JSON: $jsonData'); // This prints the JSON directly
-      // Navigate to the SetMpinScreen
-      await prefs.setString('accountList', jsonData);
-
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (context) => const SetMpinScreen()));
+      _saveArthikAccounts(jsonData);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select at least one account.')),

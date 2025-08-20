@@ -294,7 +294,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 10.0,
-                              horizontal: 1.0,
+                              horizontal: 16.0,
                             ),
                             leading: const CircleAvatar(
                               backgroundColor: Colors.black,

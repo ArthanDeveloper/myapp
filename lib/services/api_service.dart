@@ -19,11 +19,14 @@ abstract class ApiService {
     @Query('id_val') String idVal,
   );
 
-   @GET("/fetchAccountsByCustomerId")
+  @GET("/fetchAccountsByCustomerId")
   Future<dynamic> fetchAccountsByCustomerId(
     @Query('customer_id') String customerId,
   );
 
     @POST("/registerUser")
     Future<dynamic> registerUser(@Body() Map<String, dynamic> userData);
+
+  @POST("/saveArthikAccounts")
+  Future<dynamic> saveArthikAccounts(@Body() String userData);
 }
