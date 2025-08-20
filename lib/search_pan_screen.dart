@@ -4,14 +4,17 @@ import 'package:myapp/services/api_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 //Data model for CustomerProfile
 class CustomerProfile {
   final String name;
   final String maskedMobile;
   final String id;
+  final String pan;
+  final String phone1;
 
-  CustomerProfile({required this.name, required this.maskedMobile, required this.id});
+  CustomerProfile({required this.name, required this.maskedMobile, required this.id, required this.pan, required this.phone1});
 }
 
 class SearchPANScreen extends StatefulWidget {
@@ -26,7 +29,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
   String? _searchType = ''; // Internal variable to store search type
   List<CustomerProfile> _customerList = []; // List to hold customer data
   bool _isLoading = false;
-  late ApiService _apiService;
+  bool _isRegistering = false;   late ApiService _apiService;
   String? _selectedCustomerId;
 
   @override
@@ -58,11 +61,11 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
     print('Current Search Type: $_searchType'); // For debugging
   }
 
-    void _onProfileSelected(String? profileId) {
-        setState(() {
-          _selectedCustomerId = profileId;
-        });
-      }
+  void _onProfileSelected(String? profileId) {
+    setState(() {
+      _selectedCustomerId = profileId;
+    });
+  }
 
   Future<void> _onContinue() async {
     // Validate that the input is not empty and a type has been determined
@@ -83,21 +86,23 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
           // Access the list of customer details
           List<dynamic> customersData = response['customersList'];
           // Clear existing list
-         setState(() {
- _customerList = [];
- });
+          setState(() {
+            _customerList = [];
+          });
+
           // Map dynamic list to CustomerProfile objects
           for (var item in customersData) {
-            // Map item data using correct keys
-        setState(() {
-            _customerList.add(
-              CustomerProfile(
-                name: item['full_name'] ?? 'Name not available',
-                maskedMobile: item['phone1'] ?? 'Mobile not available',
-                id: item['customer_id']?.toString() ?? 'ID not available',
-              ),
-            );
-        });
+              setState(() {
+                _customerList.add(
+                  CustomerProfile(
+                    name: item['full_name'] ?? 'Name not available',
+                    maskedMobile: item['phone1'] ?? 'Mobile not available',
+                    id: item['customer_id']?.toString() ?? 'ID not available',
+                       pan: item['pan'] ?? 'PAN not available',
+                       phone1: item['phone1'] ?? 'Mobile not available',
+                  ),
+                );
+              });
           }
         } else {
           // Display an error if the API response isn't a map with customersList
@@ -119,6 +124,59 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
       }
     }
   }
+
+  Future<void> _registerUser(CustomerProfile profile) async {
+    setState(() {
+      _isRegistering = true; // Show registering indicator (if needed)
+    });
+      final prefs = await SharedPreferences.getInstance();
+    try {
+      final String deviceId =  "12455855" ;//await _getDeviceId();  Removed getDeviceId to simplify. //todo implement this again
+      final String customerName = profile.name;
+      final String panNo = profile.pan;
+      final String mobNo = profile.phone1;
+
+      final registerResponse = await _apiService.registerUser({
+        "mobNo": mobNo,
+        "customerConsent": "true",
+        "customerLanguage": "EN",
+        "deviceId": deviceId,
+        "loggedIn": "true",
+        "active": "true",
+        "customerId": _selectedCustomerId,
+        "customerName": customerName,
+        "panNo": panNo,
+      });
+       debugPrint('registerUser API Response: $registerResponse');
+      if (registerResponse['apiCode'] == 200) {
+          //store customerName
+          await prefs.setString('customerName', profile.name);
+          await prefs.setString('customerMobile', profile.maskedMobile);
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => AccountsListScreen(
+              customerId: _selectedCustomerId!,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('There was an error during User Registration, Please try again.')),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('API registerUser failed: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isRegistering = false; // Hide registering indicator (if needed)
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,7 +211,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16.0,
-                  color: Colors.grey,
+                  color: Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 40.0),
@@ -207,7 +265,6 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                 const Padding(padding: EdgeInsets.only(top: 20),child: Center(
                   child: CircularProgressIndicator(),
                 )),
-              // Display Customer List
               if (_customerList.isNotEmpty)
                 Expanded(
                   child: ListView.builder(
@@ -238,16 +295,8 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                     },
                   ),
                 ),
-              ElevatedButton(
-                onPressed:  _selectedCustomerId != null   ? () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) =>  AccountsListScreen(
-                        customerId: _selectedCustomerId!,
-                      ),
-                    ),
-                  );
-                } : null,
+               if (_customerList.isNotEmpty &&  _selectedCustomerId != null)  ElevatedButton(
+                 onPressed:  () { if(_selectedCustomerId != null) {  final selectedProfile = _customerList.firstWhere((profile) => profile.id == _selectedCustomerId);  _registerUser(selectedProfile); } }   ,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 15.0),
                   backgroundColor: Colors.deepOrange,
@@ -257,7 +306,7 @@ class _SearchPANScreenState extends State<SearchPANScreen> {
                   ),
                 ),
                 child: const Text(
-                  'CONTINUE',
+                  'NEXT',
                   style: TextStyle(fontSize: 18.0),
                 ),
               ),

@@ -24,4 +24,6 @@ abstract class ApiService {
     @Query('customer_id') String customerId,
   );
 
+    @POST("/registerUser")
+    Future<dynamic> registerUser(@Body() Map<String, dynamic> userData);
 }
