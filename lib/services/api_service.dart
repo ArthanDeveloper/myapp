@@ -32,4 +32,7 @@ abstract class ApiService {
 
    @POST("/resetMpin")
   Future<dynamic> resetMpin(@Body() Map<String, dynamic> resetData);
+  
+     @POST("/updateBiometric")
+    Future<dynamic> updateBiometric(@Body() Map<String, dynamic> biometricData);
 }

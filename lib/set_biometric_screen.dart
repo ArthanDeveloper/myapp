@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/setup_complete_screen.dart'; // Import the SetupCompleteScreen
-// You might want to navigate to a home screen or dashboard after setting biometric
-// import 'package:myapp/home_screen.dart';
+import 'package:dio/dio.dart';
+import 'package:myapp/services/api_service.dart'; // Import the ApiService
 
 class SetBiometricScreen extends StatefulWidget {
   const SetBiometricScreen({super.key});
@@ -15,10 +15,19 @@ class SetBiometricScreen extends StatefulWidget {
 class _SetBiometricScreenState extends State<SetBiometricScreen> {
   final LocalAuthentication auth = LocalAuthentication();
   bool _canCheckBiometrics = false;
+   bool _isLoading = false; // Track loading state
+    late ApiService _apiService;
+    String authToken = 'YOUR_AUTH_TOKEN'; // add token
 
   @override
   void initState() {
     super.initState();
+    final dio = Dio();
+          dio.options.headers = {
+            'Authorization': 'Bearer $authToken',
+            'Content-Type': 'application/json',
+          };
+        _apiService = ApiService(dio);
     _checkBiometrics();
   }
 
@@ -38,37 +47,53 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
   }
 
   Future<void> _authenticate() async {
-    bool authenticated = false;
+    setState(() {
+        _isLoading = true;
+      });
     try {
-      authenticated = await auth.authenticate(
-        localizedReason: 'Please authenticate to set up fingerprint unlock',
+        final prefs = await SharedPreferences.getInstance();
+         final String? customerId = prefs.getString('customer_id');
+          bool authenticated = false;
+
+        if (customerId == null) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(content: Text('There was a problem with ID, Please Check that this info has been set up')),
+           );
+         return;
+        }
+       authenticated = await auth.authenticate(
+        localizedReason: 'Authenticate to set up fingerprint unlock',
         options: const AuthenticationOptions(
           stickyAuth: true,
         ),
       );
-    } catch (e) {
-      print("Error during authentication: $e");
-    }
-    if (mounted) {
-      if (authenticated) {
-        // Save the flag in shared preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('setBiometric', true);
-        print('setBiometric flag set to true in SharedPreferences.');
+     final Map<String, dynamic>  updateBiometric  = await _apiService.updateBiometric({
+     "biometricStatus": authenticated.toString(), //make sure to check if it equals true.
+     "customerId": customerId,
+     });
+     //if it success call this 
+     if (updateBiometric['apiCode'] == 200) {
 
-        // Navigate to the SetupCompleteScreen
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const SetupCompleteScreen()),
-        );
+          await prefs.setBool('setBiometric', authenticated );
+                 Navigator.of(context).pushReplacement(
+                     MaterialPageRoute(builder: (context) => const SetupCompleteScreen()),
+                   );
 
-         ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Biometric authentication set up successfully!')),
-         );
-      } else {
-         ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Biometric authentication failed or cancelled.')),
-         );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Biometric authentication set up successfully!')),
+      );
+         }
+
+   } catch (e) {
+       print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Problem with the API call of your authenticate, ${e.toString()}')),
+    );
+   }
+     finally {
+        setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -124,10 +149,10 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
               const SizedBox(height: 40),
 
               const Spacer(),
+              if (_isLoading)
+                  CircularProgressIndicator()
+                  else          ElevatedButton(
 
-              // Activate Now Button
-              ElevatedButton(
-                // Only enable if biometrics are available
                 onPressed: _canCheckBiometrics ? _authenticate : null,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
