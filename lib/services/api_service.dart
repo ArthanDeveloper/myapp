@@ -29,4 +29,7 @@ abstract class ApiService {
 
   @POST("/saveArthikAccounts")
   Future<dynamic> saveArthikAccounts(@Body() String userData);
+
+   @POST("/resetMpin")
+  Future<dynamic> resetMpin(@Body() Map<String, dynamic> resetData);
 }

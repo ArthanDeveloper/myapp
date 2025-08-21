@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:myapp/set_biometric_screen.dart'; // Import the SetBiometricScreen
-// You might want to navigate to a home screen or dashboard after setting MPIN
-// import 'package:myapp/home_screen.dart';
+import 'package:dio/dio.dart';
+import 'package:myapp/services/api_service.dart'; // Import the ApiService
 
 class SetMpinScreen extends StatefulWidget {
   const SetMpinScreen({super.key});
@@ -15,6 +15,15 @@ class SetMpinScreen extends StatefulWidget {
 class _SetMpinScreenState extends State<SetMpinScreen> {
   final TextEditingController _mpinController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  late ApiService _apiService;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final dio = Dio();
+    _apiService = ApiService(dio);
+  }
 
   @override
   void dispose() {
@@ -24,24 +33,63 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
 
   Future<void> _setMpinAndSaveFlag() async {
     if (_formKey.currentState?.validate() ?? false) {
-      // TODO: Implement actual MPIN setting logic (e.g., send to backend)
-      print('MPIN Set: ${_mpinController.text}');
+      setState(() {
+        _isLoading = true; // Show loading indicator
+      });
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String? customerId = prefs.getString('customerName');
+        if (customerId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'There was a problem with ID, Please Check that this info has been set up',
+              ),
+            ),
+          );
+          return; // Stop execution if name is missing
+        }
+        final String mpin = _mpinController.text;
 
-      // Save the flag in shared preferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('setMpin', true);
-      print('setMpin flag set to true in SharedPreferences.');
-
-      // Navigate to the SetBiometricScreen
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const SetBiometricScreen()),
+        final resetResponse = await _apiService.resetMpin({
+          'mpin': mpin,
+          'customerId': customerId,
+        });
+        if (resetResponse['apiCode'] == 200) {
+          await prefs.setBool(
+            'setMpin',
+            true,
+          ); // Implement actual MPIN setting logic (e.g., send to backend)
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const SetBiometricScreen()),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Sucessfully setup MPIN')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'API responded wih bad request: ${resetResponse['apiDesc']}',
+              ),
+            ),
+          );
+        }
+      } catch (e) {
+        // TODO: Handle error during API call or data retrieval
+        print(e);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Error connecting with API, verify what you have selected on List and API details',
+            ),
+          ),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('MPIN set successfully!')),
-      );
     }
   }
 
@@ -50,7 +98,11 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: const TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.w600),
+      textStyle: const TextStyle(
+        fontSize: 20,
+        color: Colors.black,
+        fontWeight: FontWeight.w600,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
@@ -70,14 +122,22 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
               children: <Widget>[
                 const Spacer(),
                 // Lock Icon
-                const Icon(Icons.lock_open, size: 60, color: Colors.blueAccent), // Changed icon for setting MPIN
+                const Icon(
+                  Icons.lock_open,
+                  size: 60,
+                  color: Colors.blueAccent,
+                ), // Changed icon for setting MPIN
                 const SizedBox(height: 20),
 
                 // Title and Subtitle
                 const Text(
                   'Set Your MPIN',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -103,7 +163,13 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
                       return 'MPIN must be 4 digits';
                     }
                     return null;
-                  }, 
+                  },
+                  pinAnimationType: PinAnimationType.fade,
+
+                  onCompleted: (pin) {
+                    // Call the _setMpinAndSaveFlag function on OTP completion
+                    _setMpinAndSaveFlag();
+                  },
                 ),
                 const SizedBox(height: 40),
 
@@ -114,7 +180,8 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
                   onPressed: _setMpinAndSaveFlag,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    backgroundColor: Colors.deepOrange, // Consistent button style
+                    backgroundColor:
+                        Colors.deepOrange, // Consistent button style
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30.0),
@@ -126,6 +193,8 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                if (_isLoading)
+                  const Center(child: CircularProgressIndicator()),
               ],
             ),
           ),
