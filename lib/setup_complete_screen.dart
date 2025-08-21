@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:confetti/confetti.dart';
-import 'package:myapp/login_page.dart'; // Import the login page
+import 'package:myapp/login_with_mpin_screen.dart'; //Import LoginWithMPinScreen
+//import 'package:myapp/login_page.dart'; //Removed original to remove this
 
 class SetupCompleteScreen extends StatefulWidget {
   const SetupCompleteScreen({super.key});
@@ -90,10 +91,10 @@ class _SetupCompleteScreenState extends State<SetupCompleteScreen> with SingleTi
 
                   // Login Now Button
                   ElevatedButton(
-                    onPressed: () {
-                      // Navigate to the login page and remove all previous routes
+                    onPressed: () { //Naviagte to login with MPIN Screen
+                      // Navigate to the login with mpin page and remove all previous routes
                       Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const LoginPage()),
+                        MaterialPageRoute(builder: (context) => const LoginWithMpinScreen()),
                         (Route<dynamic> route) => false,
                       );
                     },

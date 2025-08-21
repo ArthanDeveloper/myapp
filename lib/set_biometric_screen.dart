@@ -17,7 +17,7 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
   bool _canCheckBiometrics = false;
    bool _isLoading = false; // Track loading state
     late ApiService _apiService;
-    String authToken = 'YOUR_AUTH_TOKEN'; // add token
+    String authToken = 'YOUR_AUTH_TOKEN'; // Token
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
       });
     try {
         final prefs = await SharedPreferences.getInstance();
-         final String? customerId = prefs.getString('customer_id');
+         final String? customerId = prefs.getString('customerId'); // getting the right id with this one now
           bool authenticated = false;
 
         if (customerId == null) {
@@ -62,28 +62,24 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
          return;
         }
        authenticated = await auth.authenticate(
-        localizedReason: 'Authenticate to set up fingerprint unlock',
+        localizedReason: 'Please authenticate to set up fingerprint unlock',
         options: const AuthenticationOptions(
           stickyAuth: true,
         ),
       );
-     final Map<String, dynamic>  updateBiometric  = await _apiService.updateBiometric({
-     "biometricStatus": authenticated.toString(), //make sure to check if it equals true.
-     "customerId": customerId,
-     });
-     //if it success call this 
-     if (updateBiometric['apiCode'] == 200) {
 
-          await prefs.setBool('setBiometric', authenticated );
-                 Navigator.of(context).pushReplacement(
-                     MaterialPageRoute(builder: (context) => const SetupCompleteScreen()),
-                   );
+             final Map<String, dynamic>  updateBiometric  = await _apiService.registerUser({
+                 "biometricStatus": authenticated.toString(), //make sure to check if it equals true.
+                 "customerId": customerId,
+                });
+                       await prefs.setBool('setBiometric', authenticated );
+                      Navigator.of(context).pushReplacement(
+                         MaterialPageRoute(builder: (context) => const SetupCompleteScreen()),
+                         );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Biometric authentication set up successfully!')),
-      );
-         }
-
+              ScaffoldMessenger.of(context).showSnackBar(
+                 const SnackBar(content: Text('Biometric authentication set up successfully!')),
+               );
    } catch (e) {
        print(e);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -149,7 +145,7 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
               const SizedBox(height: 40),
 
               const Spacer(),
-              if (_isLoading)
+                            if (_isLoading)
                   CircularProgressIndicator()
                   else          ElevatedButton(
 

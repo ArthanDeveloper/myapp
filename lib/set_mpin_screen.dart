@@ -38,7 +38,7 @@ class _SetMpinScreenState extends State<SetMpinScreen> {
       });
       try {
         final prefs = await SharedPreferences.getInstance();
-        final String? customerId = prefs.getString('customerName');
+        final String? customerId = prefs.getString('customerId');
         if (customerId == null) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
