@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/homepage.dart'; // Assuming Loan model is in homepage.dart
-
 // Simple data model for a transaction
 class Transaction {
   final String date;
@@ -19,15 +18,8 @@ class Transaction {
 class LoanDetailsScreen extends StatelessWidget {
   final Loan loan;
 
-  const LoanDetailsScreen({super.key, required this.loan});
-
-  // Dummy data for transaction history
-  static final List<Transaction> _transactions = [
-    Transaction(date: 'Apr 1, 2024', description: 'EMI Payment', amount: '\$550.00'),
-    Transaction(date: 'Mar 1, 2024', description: 'EMI Payment', amount: '\$550.00'),
-    Transaction(date: 'Feb 1, 2024', description: 'EMI Payment', amount: '\$550.00'),
-    Transaction(date: 'Jan 1, 2024', description: 'Loan Disbursal', amount: '\$35,000.07', isCredit: true),
-  ];
+  const LoanDetailsScreen({Key? key, required this.loan}) : super(key: key);
+  static const List<Widget> TransactionHistory = <Widget>[];
 
   @override
   Widget build(BuildContext context) {
@@ -41,78 +33,47 @@ class LoanDetailsScreen extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          // Loan Details Section
           _buildSection(
+            title: 'Loan Information',
+            action: IconButton(
+              icon: Icon(Icons.more_vert), // more icon to the extreme of text
+              onPressed: () {
+                // TODO: Implement action menu for more details
+                print('view more options');
+              },
+            ),
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Loan Details', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  _buildDetailRow('Loan Amount:', loan.amount),
-                  _buildDetailRow('Status:', loan.status),
-                  _buildDetailRow('Last Updated:', loan.lastUpdated),
-                  _buildDetailRow('Interest Rate:', '8.5% p.a.'), // Dummy data
-                  _buildDetailRow('Tenure:', '60 months'), // Dummy data
+                  _buildDetailRow('Loan Account No:', loan.accountId),  _buildDetailRow('Loan Amount:', loan.amount),
+                  _buildDetailRow('Principal Outstanding:', '\$2,300.00'),  //Dummy value
+                  _buildDetailRow('Balance Tenure:', '32 months'),       //Dummy value
+                  _buildDetailRow('Rate of Interest:', '11.5% p.a.'),    //Dummy value
                 ],
               ),
             ),
           ),
-
-          // Downloads Section
           _buildSection(
+            title: 'Application Status',
+            action: IconButton(
+              icon: Icon(Icons.more_vert), // more icon to the extreme of the application status title
+              onPressed: () {
+                // TODO: Implement action menu for download or what not
+                print('downloading things');
+              },
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: Text('Downloads', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                _buildDownloadTile('Repayment Schedule', Icons.calendar_today_outlined),
-                _buildDownloadTile('Loan Statement', Icons.receipt_long_outlined),
-                _buildDownloadTile('Interest Certificate', Icons.description_outlined),
+                 Text('It has nothing to implement yet'),
               ],
             ),
-          ),
-          
-          // Transaction History Section
-          _buildSection(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: Text('Transaction History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                ..._transactions.map((tx) => ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: tx.isCredit ? Colors.green.shade100 : Colors.red.shade100,
-                    child: Icon(
-                      tx.isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                      color: tx.isCredit ? Colors.green.shade800 : Colors.red.shade800,
-                    ),
-                  ),
-                  title: Text(tx.description),
-                  subtitle: Text(tx.date),
-                  trailing: Text(
-                    '${tx.isCredit ? '' : '- '}${tx.amount}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: tx.isCredit ? Colors.green.shade800 : Colors.black,
-                    ),
-                  ),
-                )),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          ),    ]));
+}
 
-  // Helper widget to create a consistent section card
-  Widget _buildSection({required Widget child}) {
+  Widget _buildSection({required Widget child, required String title, Widget? action, }) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       elevation: 0.5,
@@ -120,9 +81,15 @@ class LoanDetailsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.0),
         side: BorderSide(color: Colors.grey.shade200),
       ),
-      child: child,
+       child: Column(children: [  Row(        crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [  Text(title,style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),), action ?? const SizedBox.shrink()   ]),          child,    ]
+        ),
     );
   }
+
 
   // Helper widget for detail rows
   Widget _buildDetailRow(String title, String value) {

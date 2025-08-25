@@ -59,10 +59,12 @@ class _HomepageState extends State<Homepage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.2),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
 
     _animationController.forward();
   }
@@ -99,20 +101,22 @@ class _HomepageState extends State<Homepage>
         setState(() {
           _customerName = response['name'] as String? ?? 'Loading...';
           final List<dynamic> loanData = response['data'];
-          _loans = loanData
-              .map(
-                (item) =>
-                Loan(
-                  title: item['accountName'] ?? 'Account Name not available',
-                  status: item['operationalStatus'] ?? 'Status not available',
-                  icon: Icons.monetization_on_outlined,
-                  amount: item['amount'] ?? 'Amount not available',
-                  lastUpdated:
-                  item['accountOpenDateStr'] ?? 'Date not available',
-                  accountId: item['accountId'] ?? 'NA',
-                ),
-          )
-              .toList();
+          _loans =
+              loanData
+                  .map(
+                    (item) => Loan(
+                      title:
+                          item['accountName'] ?? 'Account Name not available',
+                      status:
+                          item['operationalStatus'] ?? 'Status not available',
+                      icon: Icons.monetization_on_outlined,
+                      amount: item['amount'] ?? 'Amount not available',
+                      lastUpdated:
+                          item['accountOpenDateStr'] ?? 'Date not available',
+                      accountId: item['accountId'] ?? 'NA',
+                    ),
+                  )
+                  .toList();
         });
         debugPrint(
           'API Response: $response',
@@ -218,8 +222,7 @@ class _HomepageState extends State<Homepage>
               // Loan List - Redesigned Cards
               ..._loans
                   .map(
-                    (loan) =>
-                    Card(
+                    (loan) => Card(
                       margin: const EdgeInsets.symmetric(vertical: 8.0),
                       elevation: 0.5,
                       shape: RoundedRectangleBorder(
@@ -231,8 +234,8 @@ class _HomepageState extends State<Homepage>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  LoanDetailsScreen(loan: loan),
+                              builder:
+                                  (context) => LoanDetailsScreen(loan: loan),
                             ),
                           );
                         },
@@ -268,12 +271,12 @@ class _HomepageState extends State<Homepage>
                               const SizedBox(height: 20),
                               Row(
                                 mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                                    MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Column(
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
@@ -284,10 +287,8 @@ class _HomepageState extends State<Homepage>
                                             ),
                                             decoration: BoxDecoration(
                                               color: Colors.grey[300],
-                                              borderRadius: BorderRadius
-                                                  .circular(
-                                                4.0,
-                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(4.0),
                                             ),
                                             child: Text(
                                               loan.accountId,
@@ -327,7 +328,7 @@ class _HomepageState extends State<Homepage>
                         ),
                       ),
                     ),
-              )
+                  )
                   .toList(),
             ],
           ),
