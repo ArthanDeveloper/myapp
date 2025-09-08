@@ -28,6 +28,7 @@ class Account {
 
 class AccountsListScreen extends StatefulWidget {
   final String customerId;
+
   const AccountsListScreen({Key? key, required this.customerId})
     : super(key: key);
 
@@ -40,6 +41,7 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
   bool _isLoading = false;
   late ApiService _apiService;
   final Set<String> _selectedAccountIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -112,23 +114,22 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
           response.containsKey('accountsList')) {
         List<dynamic> accountsData = response['accountsList'];
         setState(() {
-          _accounts =
-              accountsData
-                  .map(
-                    (item) => Account(
-                      account_name:
-                          item['account_name'] ?? 'Account Type not available',
-                      account_id:
-                          item['account_id'] ?? 'Account Number not available',
-                      customer_id:
-                          item['customer_id']?.toString() ?? 'ID not available',
-                      branch_code: '',
-                      branch_name: '',
-                      product_code: '',
-                      opened_on_value_date: '',
-                    ),
-                  )
-                  .toList();
+          _accounts = accountsData
+              .map(
+                (item) => Account(
+                  account_name:
+                      item['account_name'] ?? 'Account Type not available',
+                  account_id:
+                      item['account_id'] ?? 'Account Number not available',
+                  customer_id:
+                      item['customer_id']?.toString() ?? 'ID not available',
+                  branch_code: '',
+                  branch_name: '',
+                  product_code: '',
+                  opened_on_value_date: '',
+                ),
+              )
+              .toList();
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -201,9 +202,8 @@ class _AccountsListScreenState extends State<AccountsListScreen> {
                     ),
                     child: CheckboxListTile(
                       // Changed from ListTile with Radio to CheckboxListTile
-                      controlAffinity:
-                          ListTileControlAffinity
-                              .leading, // Checkbox on the left
+                      controlAffinity: ListTileControlAffinity.leading,
+                      // Checkbox on the left
                       value: _selectedAccountIds.contains(account.account_id),
                       onChanged: (bool? isSelected) {
                         _onAccountSelected(isSelected, account.account_id);

@@ -14,30 +14,33 @@ class SplashScreen extends StatelessWidget {
             Expanded(
               child: Center(
                 child: Image.asset(
-                  'assets/arthik_banner.png', // Replace with your actual logo path
-                  width: 150,
-                  height: 150,
+                  'assets/app_splash.png', // Replace with your actual logo path
+                  width: 300,
+                  height: 200,
                 ),
               ),
             ),
             // Company Name and App Version
             Padding(
-              padding: const EdgeInsets.only(bottom: 20.0),
+              padding: const EdgeInsets.only(bottom: 50.0),
               child: Column(
                 children: [
-                  Text(
-                    'Arthan Finance Private Limited', // Replace with your company name
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                  RichText(
+                    text: TextSpan(
+                      text: 'Arthan Finance Private Limited',
+                      // Replace with your company name
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black54,
+                      ),
                     ),
                   ),
                   SizedBox(height: 5),
-                  Text(
-                    'Version 1.0.0', // Replace with your app version
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
+                  RichText(
+                    text: TextSpan(
+                      text: 'Version 1.0(082025)',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ),
                 ],

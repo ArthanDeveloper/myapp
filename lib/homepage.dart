@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:myapp/loan_details_screen.dart'; // Import the LoanDetailsScreen
 import 'package:myapp/services/api_service.dart';
 import 'package:dio/dio.dart';
@@ -13,6 +14,9 @@ class Loan {
   final String amount;
   final String lastUpdated;
   final String accountId;
+  final String tenureMagnitude;
+  final String tenureUnit;
+  final String normalInterestRate;
 
   Loan({
     required this.title,
@@ -21,6 +25,9 @@ class Loan {
     required this.amount,
     required this.lastUpdated,
     required this.accountId,
+    this.tenureMagnitude = 'N/A',
+    this.tenureUnit = 'N/A',
+    this.normalInterestRate = 'N/A',
   });
 }
 
@@ -59,12 +66,10 @@ class _HomepageState extends State<Homepage>
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.2),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
 
     _animationController.forward();
   }
@@ -101,22 +106,20 @@ class _HomepageState extends State<Homepage>
         setState(() {
           _customerName = response['name'] as String? ?? 'Loading...';
           final List<dynamic> loanData = response['data'];
-          _loans =
-              loanData
-                  .map(
-                    (item) => Loan(
-                      title:
-                          item['accountName'] ?? 'Account Name not available',
-                      status:
-                          item['operationalStatus'] ?? 'Status not available',
-                      icon: Icons.monetization_on_outlined,
-                      amount: item['amount'] ?? 'Amount not available',
-                      lastUpdated:
-                          item['accountOpenDateStr'] ?? 'Date not available',
-                      accountId: item['accountId'] ?? 'NA',
-                    ),
-                  )
-                  .toList();
+          _loans = loanData
+              .map(
+                (item) => Loan(
+                  title: item['accountName'] ?? 'Account Name not available',
+                  status: item['operationalStatus'] ?? 'Status not available',
+                  icon: Icons.monetization_on_outlined,
+                  amount: item['amount'] ?? 'Amount not available',
+                  lastUpdated:
+                      item['accountOpenDateStr'] ?? 'Date not available',
+                  accountId: item['accountId'] ?? 'NA',
+
+                ),
+              )
+              .toList();
         });
         debugPrint(
           'API Response: $response',
@@ -189,7 +192,7 @@ class _HomepageState extends State<Homepage>
           onPressed: () {},
         ),
         title: Text(
-          'Lendeasy',
+          'Arthik',
           style: TextStyle(
             color: Colors.green.shade700,
             fontWeight: FontWeight.bold,

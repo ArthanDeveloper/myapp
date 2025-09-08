@@ -1,47 +1,58 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/homepage.dart';
+import 'package:myapp/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:pinput/pinput.dart';
+import 'package:myapp/homepage.dart'; // Import the Homepage
 
 class LoginWithMpinScreen extends StatefulWidget {
-  const LoginWithMpinScreen({Key? key}) : super(key: key);
+  const LoginWithMpinScreen({super.key});
 
   @override
-  _LoginWithMpinScreenState createState() => _LoginWithMpinScreenState();
+  State<LoginWithMpinScreen> createState() => _LoginWithMpinScreenState();
 }
 
-class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTickerProviderStateMixin {
+class _LoginWithMpinScreenState extends State<LoginWithMpinScreen>
+    with SingleTickerProviderStateMixin {
   final LocalAuthentication auth = LocalAuthentication();
   final TextEditingController _mpinController = TextEditingController();
+
+  String _customerName = 'User';
+  String _customerId = '';
+  bool _setBiometricFlag = false;
+  bool _canCheckBiometrics = false;
+  bool _setMpinFlag =
+  false; //ADD here with new state for mpin to make it work, must have this
+  bool _isAuthenticatingBiometric = false;
+
+  // For animation (simple unlocking safely animation)
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
-
-  String _customerName = 'User';
-  bool _setBiometricFlag = false;
-  bool _canCheckBiometrics = false;
-  bool _isAuthenticatingBiometric = false;
+  late ApiService _apiService;
+  bool _isVerifying = false;
 
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadUserDataAndFlags();
     _checkBiometricsAvailability();
+    final dio = Dio();
+    _apiService = ApiService(dio);
 
+    // Setup animation
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 800), // Adjust duration as needed
     );
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutBack,
-    ));
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeIn,
-    ));
-    _animationController.forward(); // Trigger the animation
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _animationController.forward();
   }
 
   @override
@@ -51,11 +62,13 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     super.dispose();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _loadUserDataAndFlags() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _customerName = prefs.getString('customerName') ?? 'User';
+      _customerId = prefs.getString('customerId') ?? '';
       _setBiometricFlag = prefs.getBool('setBiometric') ?? false;
+      _setMpinFlag = prefs.getBool('setMpin') ?? false; //get bool from set
     });
     _checkLoginMethodAndProceed();
   }
@@ -75,30 +88,73 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
 
   Future<void> _checkLoginMethodAndProceed() async {
     if (_setBiometricFlag && _canCheckBiometrics) {
-      // If biometric is enabled, authenticate
-      _authenticateBiometric();
+      // Try biometric login automatically
+      await _authenticateBiometric(isAutoAttempt: true);
+    }
+    // If biometric is not set or fails, then prompt for MPIN if set
+    if (!_setBiometricFlag || (!_canCheckBiometrics && _setMpinFlag)) {
+      // This means we'll show the MPIN input by default if biometric isn't set or available
+      // No explicit action needed here, the UI will render accordingly.
     }
   }
-  Future<void> _authenticateBiometric() async {
-  setState(() {
-       _isAuthenticatingBiometric = true; // Stop API loading function
-      });
+
+  Future<void> _authenticateBiometric({bool isAutoAttempt = false}) async {
     bool authenticated = false;
     try {
-     authenticated = await auth.authenticate(
+      authenticated = await auth.authenticate(
         localizedReason: 'Scan to authenticate',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-        ),
+        options: const AuthenticationOptions(stickyAuth: true),
       );
     } catch (e) {
       print("Error during biometric authentication: $e");
     }
-    //Check to navigate and set to new page after biometric is loaded.
-    Navigator.pushReplacement(
-      context,
-       MaterialPageRoute(builder: (context) => const Homepage()),
-   );
+
+    if (authenticated) {
+      // On successful biometric login, navigate to Homepage
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const Homepage()),
+      );
+    }
+  }
+
+  Future<void> _verifyMpin() async {
+    if (_mpinController.text.length != 4) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the complete MPIN.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isVerifying = true;
+    });
+
+    try {
+      final response = await _apiService.auth({
+        'customerId': _customerId,
+        'mpin': _mpinController.text,
+      });
+
+      if (response != null && response['apiCode'] == 200) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => Homepage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Incorrect MPIN. Please try again.')),
+        );
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to verify MPIN. Please check your connection.')),
+      );
+    } finally {
+      setState(() {
+        _isVerifying = false;
+      });
+    }
   }
 
   @override
@@ -106,7 +162,11 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     final defaultPinTheme = PinTheme(
       width: 56,
       height: 56,
-      textStyle: const TextStyle(fontSize: 20, color: Colors.black, fontWeight: FontWeight.w600),
+      textStyle: const TextStyle(
+        fontSize: 20,
+        color: Colors.black,
+        fontWeight: FontWeight.w600,
+      ),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade400),
         borderRadius: BorderRadius.circular(8),
@@ -114,23 +174,7 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
     );
 
     return Scaffold(
-      backgroundColor: Color(0xFFE8EAF6),  // Set background color
-        appBar: AppBar(
-          leading: IconButton(
-          icon: Icon(Icons.menu), // Add a menu-like icon
-          onPressed: () {
-           Navigator.pop(context);//backpressed
-           },
-           ),
-          title: Row(   // Add a row to change the location and implement code
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-             Icon(Icons.headset_mic), //This for the call side on a help part
-               Icon(Icons.more_vert), //This is a settings or what not on the action code        ],
-       ),  
-       elevation: 0,
-      backgroundColor: Colors.transparent,
-        ),
+      backgroundColor: Color(0xFFE8EAF6), // Set background color
       body: FadeTransition(
         opacity: _opacityAnimation,
         child: ScaleTransition(
@@ -142,92 +186,126 @@ class _LoginWithMpinScreenState extends State<LoginWithMpinScreen> with SingleTi
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 const Spacer(),
-                const Icon(
-                         Icons.shield, // Replace with new icon widget as needed
-                         size: 80.0,
-                         color: Colors.red,
-                         //Added this to a icon, so it is what code is
-                       ),
-                       // Text Add for what the names should be with it
-                       Text(
-                      'Welcome $_customerName',//Added to be part of the user prompt
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87), // Assuming size and bold style
-                       ),
-
+                Image.asset(
+                  'assets/app_splash.png', // Replace with your actual logo path
+                  width: 150,
+                  height: 150,
+                ),
+                Icon(Icons.shield, size: 80, color: Colors.blue),
+                //Added this to a icon, so it is what code is
+                const SizedBox(height: 20),
+                // Text Add for what the names should be with it
                 Text(
-                  'Please enter your MPIN',//Text in the Text Field
+                  'Welcome, $_customerName',
+                  //Added to be part of the user prompt
                   textAlign: TextAlign.center,
-                ),//Text field that will show
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ), // Assuming size and bold style
+                ),
+                Text(
+                  'Please enter your MPIN', //Text in the Text Field
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16), // Spacing between widgets
-                        Pinput(
-                        controller: _mpinController,
-                        length: 4,
-                      obscureText: true, // hide input digits, to increase auths
-                      defaultPinTheme: defaultPinTheme,
-                       focusedPinTheme: defaultPinTheme.copyDecorationWith(
-                       border: Border.all(color: Colors.blue),
-                       ),
-                    // onCompleted: (pin) => _verifyOtp(), // Call verify when it all completed
-                        ),
-                         Align(
-                    alignment: Alignment.center, // Use the correct align
-                    child: TextButton(
+                Pinput(
+                  controller: _mpinController,
+                  length: 4,
+                  obscureText: true,
+                  // hide input digits, to increase auths
+                  defaultPinTheme: defaultPinTheme,
+                  focusedPinTheme: defaultPinTheme.copyDecorationWith(
+                    border: Border.all(color: Colors.blue),
+                  ),
+                  onCompleted: (pin) => _verifyMpin() // Call verify when it all completed
+                ),
+                Align(
+                  alignment: Alignment.center, // Use the correct align
+                  child: TextButton(
                     onPressed: () {},
-                     child: const Text('Forgot MPIN?', style: TextStyle(color: Colors.blue)),//Text at login page design
+                    child: const Text(
+                      'Forgot MPIN?',
+                      style: TextStyle(color: Colors.blue),
+                    ), //Text at login page design
+                  ),
+                ),
+
+                const Text('OR', textAlign: TextAlign.center),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 15.0,
+                    horizontal: 15.0,
+                  ),
+                  child: ElevatedButton.icon(
+                    icon: Icon(Icons.fingerprint),
+                    label: const Text(
+                      'Login with your Fingerprint',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    onPressed: _canCheckBiometrics
+                        ? _authenticateBiometric
+                        : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10.0,
+                        horizontal: 10.0,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.0),
                       ),
                     ),
-                  
-                   const Text('OR' ,textAlign: TextAlign.center,),
-
-               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 15.0), child:         ElevatedButton.icon(
-                icon: Icon(Icons.fingerprint),
-                label: const Text('Login with your Fingerprint', style: TextStyle(fontSize: 18)),
-                onPressed: _canCheckBiometrics ? _authenticateBiometric : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[100],
-                  foregroundColor: Colors.black54,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
                   ),
-                ),    ),
-          ),
-         
-         SizedBox( height:5),//Bottom naviagte and text
-             Align(
-               alignment: Alignment.bottomCenter,
-            child:RichText(text: TextSpan(
-            text: 'Version 2.42(18220)',
-               style: TextStyle(fontSize: 12, color: Colors.black54),
-                  )),
-                 ),
-                 SizedBox( height:5),
-         Row( //Bottom icon Row
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-             children: [
-               IconButton(
-                  icon: const Icon(Icons.lock_outline,color: Colors.black54),
-                   onPressed: () {},
                 ),
-              IconButton(
-                icon: const Icon(Icons.manage_accounts,color: Colors.black54),
-                onPressed: () {},
-                 ),
-              IconButton(
-                icon: const Icon(Icons.qr_code,color: Colors.black54),
-               onPressed: () {},
-              ),
-              IconButton(
-               icon: const Icon(Icons.credit_card,color: Colors.black54),
-                   onPressed: () {},
-              ),
-             ],
-           ),
-            
-                 const Spacer(),
-                ],
-              ),
+
+                SizedBox(height: 5), //Bottom naviagte and text
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: RichText(
+                    text: TextSpan(
+                      text: 'Version 1.0(082025)',
+                      style: TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 5),
+                // Row(
+                //   //Bottom icon Row
+                //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                //   children: [
+                //     IconButton(
+                //       icon: const Icon(
+                //         Icons.lock_outline,
+                //         color: Colors.black54,
+                //       ),
+                //       onPressed: () {},
+                //     ),
+                //     IconButton(
+                //       icon: const Icon(
+                //         Icons.manage_accounts,
+                //         color: Colors.black54,
+                //       ),
+                //       onPressed: () {},
+                //     ),
+                //     IconButton(
+                //       icon: const Icon(Icons.qr_code, color: Colors.black54),
+                //       onPressed: () {},
+                //     ),
+                //     IconButton(
+                //       icon: const Icon(
+                //         Icons.credit_card,
+                //         color: Colors.black54,
+                //       ),
+                //       onPressed: () {},
+                //     ),
+                //   ],
+                // ),
+                const Spacer(),
+              ],
             ),
           ),
         ),

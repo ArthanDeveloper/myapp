@@ -1,3 +1,4 @@
+import 'package:myapp/models/loan_details_object.dart';
 import 'package:retrofit/retrofit.dart';
 import 'package:dio/dio.dart';
 
@@ -15,25 +16,32 @@ abstract class ApiService {
 
   @GET("/fetchCustId")
   Future<dynamic> fetchCustId(
-    @Query('id_type') String idType,
-    @Query('id_val') String idVal,
-  );
+      @Query('id_type') String idType,
+      @Query('id_val') String idVal
+      );
 
   @GET("/fetchAccountsByCustomerId")
   Future<dynamic> fetchAccountsByCustomerId(
-    @Query('customer_id') String customerId,
-  );
+      @Query('customer_id') String customerId,);
 
-    @POST("/registerUser")
-    Future<dynamic> registerUser(@Body() Map<String, dynamic> userData);
+  @POST("/registerUser")
+  Future<dynamic> registerUser(@Body() Map<String, dynamic> userData);
 
   @POST("/saveArthikAccounts")
   Future<dynamic> saveArthikAccounts(@Body() String userData);
 
-   @POST("/resetMpin")
+  @POST("/resetMpin")
   Future<dynamic> resetMpin(@Body() Map<String, dynamic> resetData);
-     @POST("/updateBiometric")
-    Future<dynamic> updateBiometric(@Body() Map<String, dynamic> biometricData);
-        @GET("/dashBoard")
+
+  @POST("/updateBiometric")
+  Future<dynamic> updateBiometric(@Body() Map<String, dynamic> biometricData);
+
+  @GET("/dashBoard")
   Future<dynamic> getDashBoard(@Query('customerId') String customerId);
+
+  @POST("/auth")
+  Future<dynamic> auth(@Body() Map<String, dynamic> verificationData);
+
+  @GET("/getCustomerLoanInfo")
+  Future<LoanDetailsObject> getCustomerLoanInfo(@Query('accountId') String accountId);
 }
