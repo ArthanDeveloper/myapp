@@ -68,7 +68,7 @@ class _SetBiometricScreenState extends State<SetBiometricScreen> {
         ),
       );
 
-             final Map<String, dynamic>  updateBiometric  = await _apiService.registerUser({
+             final Map<String, dynamic>  updateBiometric  = await _apiService.updateBiometric({
                  "biometricStatus": authenticated.toString(), //make sure to check if it equals true.
                  "customerId": customerId,
                 });

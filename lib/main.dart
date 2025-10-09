@@ -61,7 +61,7 @@ class _SplashScreenWrapperState extends State<SplashScreenWrapper> {
         } else {
           // If onboarding has not been visited and no MPIN/Biometric, navigate to the first Onboarding Screen
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+            MaterialPageRoute(builder: (context) => const LoginPage()),
           );
         }
       }

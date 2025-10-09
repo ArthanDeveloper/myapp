@@ -7,7 +7,6 @@ part 'api_service.g.dart';
 @RestApi(baseUrl: "https://uatapi.arthan.ai/arthik/api/v2")
 abstract class ApiService {
   factory ApiService(Dio dio, {String baseUrl}) = _ApiService;
-
   @POST("/getOtp")
   Future<dynamic> getOtp(@Body() Map<String, dynamic> mobileNumber);
 
@@ -44,4 +43,17 @@ abstract class ApiService {
 
   @GET("/getCustomerLoanInfo")
   Future<LoanDetailsObject> getCustomerLoanInfo(@Query('accountId') String accountId);
+
+  @GET("/getAllAccStatement")
+  Future<LoanDetailsObject> getAllAccStatement(@Query('accountId') String accountId);
+
+  @GET("/generateReport")
+  Future<dynamic> generateReport(
+      @Query('reportName') String reportName,
+      @Query('accountId_text') String accountIdText,
+      @Query('reportOutputType') String reportOutputType,
+      );
+
+  @POST("/updatePaymentEntry")
+  Future<dynamic> updatePaymentEntry(@Body() Map<String, dynamic> paymentData);
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/helper/helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/loan_details_screen.dart'; // Import the LoanDetailsScreen
@@ -48,6 +49,7 @@ class _HomepageState extends State<Homepage>
   bool _isLoading = false;
   String authToken = 'YOUR_AUTH_TOKEN'; // Token
   late ApiService _apiService;
+  int _selectedIndex = 0; // For BottomNavigationBar
 
   @override
   void initState() {
@@ -116,7 +118,6 @@ class _HomepageState extends State<Homepage>
                   lastUpdated:
                       item['accountOpenDateStr'] ?? 'Date not available',
                   accountId: item['accountId'] ?? 'NA',
-
                 ),
               )
               .toList();
@@ -183,28 +184,10 @@ class _HomepageState extends State<Homepage>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.chat_bubble_outline),
-          onPressed: () {},
-        ),
-        title: Text(
-          'Arthik',
-          style: TextStyle(
-            color: Colors.green.shade700,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(icon: const Icon(Icons.person_outline), onPressed: () {}),
-        ],
-      ),
-      backgroundColor: Colors.white,
-      body: FadeTransition(
+  List<Widget> get _getWidgetOptions {
+    // Using a getter
+    return <Widget>[
+      FadeTransition(
         opacity: _fadeAnimation,
         child: SlideTransition(
           position: _slideAnimation,
@@ -213,14 +196,14 @@ class _HomepageState extends State<Homepage>
             children: [
               // Welcome Message
               Text(
-                'Welcome, $_customerName!',
+                'Welcome, ${toTitleCase(_customerName)}!',
                 style: const TextStyle(
-                  fontSize: 23,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 10),
 
               // Loan List - Redesigned Cards
               ..._loans
@@ -237,8 +220,8 @@ class _HomepageState extends State<Homepage>
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder:
-                                  (context) => LoanDetailsScreen(loan: loan),
+                              builder: (context) =>
+                                  LoanDetailsScreen(loan: loan),
                             ),
                           );
                         },
@@ -251,7 +234,7 @@ class _HomepageState extends State<Homepage>
                               Row(
                                 children: [
                                   Icon(
-                                    loan.icon,
+                                    Icons.business_center_rounded,
                                     color: Colors.grey.shade700,
                                     size: 28,
                                   ),
@@ -336,6 +319,104 @@ class _HomepageState extends State<Homepage>
             ],
           ),
         ),
+      ),
+      // Placeholder for Loans page
+      const Center(child: Text('Loans Page', style: TextStyle(fontSize: 24))),
+      // Placeholder for Services page
+      const Center(
+        child: Text('Services Page', style: TextStyle(fontSize: 24)),
+      ),
+      // Placeholder for Profile page
+      const Center(child: Text('Profile Page', style: TextStyle(fontSize: 24))),
+    ];
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      // If you want to re-trigger animations when switching to the "Home" tab (index 0)
+      // and it's not already the current tab, you can do:
+      if (index == 0) {
+        _animationController.reset();
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // ... inside the build method of _HomepageState
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.chat_bubble_outline),
+          onPressed: () {
+            // TODO: Implement chat functionality
+          },
+        ),
+        // Replace Text widget with Image widget for the title
+        title: SizedBox(
+          // Use SizedBox to constrain the image size if needed
+          height: kToolbarHeight - 01,
+          // Example: Adjust height as needed, kToolbarHeight is AppBar's typical height
+          child: Image.asset(
+            'assets/app_splash.png',
+            // Replace with the correct path to your image
+            fit: BoxFit
+                .contain, // Adjust BoxFit as needed (e.g., BoxFit.fitHeight)
+          ),
+        ),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () {
+              // TODO: Implement profile/user action
+            },
+          ),
+        ],
+        // Optional: You might want to adjust AppBar properties like backgroundColor or elevation
+        // backgroundColor: Colors.white, // If your logo looks better on a white AppBar
+        elevation: 8,
+      ),
+
+      // ... rest of your build method
+      backgroundColor: Colors.white,
+      body: Center(
+        // Or IndexedStack for better performance if pages are complex
+        child: _getWidgetOptions.elementAt(
+          _selectedIndex,
+        ), // Use the getter here
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            activeIcon: Icon(Icons.account_balance_wallet),
+            label: 'Loans',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.miscellaneous_services_outlined),
+            activeIcon: Icon(Icons.miscellaneous_services),
+            label: 'Services',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.green.shade700,
+        unselectedItemColor: Colors.grey.shade600,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped,
       ),
     );
   }

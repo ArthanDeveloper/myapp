@@ -1,10 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/homepage.dart';
+import 'package:myapp/account_details_screen.dart';
 import 'package:myapp/models/loan_details_object.dart';
 import 'package:myapp/services/api_service.dart';
+import 'package:myapp/transaction_history.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-// Assuming Loan model is in homepage.dart
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io'; // For File operations
+import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 
 // Simple data model for a transaction
 class Transaction {
@@ -38,11 +42,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   List<Transaction> _transactions = [];
-  late var encoreAccountSummary = '';
   bool _isLoading = false;
   String authToken = 'YOUR_AUTH_TOKEN'; // Token
   late ApiService _apiService;
   late Razorpay _razorpay;
+  PaymentSuccessResponse? _lastSuccessfulPayment; // To store details for retrying postPaymentToServer
   LoanDetailsObject loanDetailsObject = LoanDetailsObject();
 
   @override
@@ -83,15 +87,17 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    // Handle payment success
-    debugPrint("PAYMENT SUCCESS: ${response.paymentId}");
+    debugPrint("PAYMENT SUCCESS: Payment ID: ${response.paymentId}, Order ID: ${response.orderId}, Signature: ${response.signature}");
+    // IMPORTANT: Call your server to verify payment and record it
+    _lastSuccessfulPayment = response;
+    postPaymentToServer(response);
+
+    // You might want to wait for postPaymentToServer to complete before showing
+    // the final "Payment Successful" message to the user, or update UI based on its outcome.
+    // For now, this is a simple approach:
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Payment Successful: ${response.paymentId}")),
+      SnackBar(content: Text("Payment processing with server...")), // Or similar
     );
-    // TODO:
-    // 1. Verify the payment signature on your server.
-    // 2. Update your backend with the payment status.
-    // 3. Navigate to a success screen or update UI.
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -124,6 +130,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
 
     try {
       final response = await _apiService.getCustomerLoanInfo(accountId!);
+      debugPrint('API Response:  $response');
       if (response != null) {
         setState(() {
           loanDetailsObject = response;
@@ -193,20 +200,24 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                       InkWell(
                         // Makes the "View More" text tappable
                         onTap: () {
-                          // TODO: Implement action for "View More"
-                          // For example, navigate to another screen or expand details
-                          print('View More tapped!');
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('View More tapped!')),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  AccountDetailsScreen(loanDetailsObject: loanDetailsObject ?? widget.loan),
+                            ),
                           );
+                          // For example, navigate to another screen or expand details
+
                         },
                         child: Text(
-                          'View More',
+                          'View More >',
                           style: TextStyle(
                             color: Theme.of(
                               context,
                             ).primaryColor, // Or your preferred color
                             fontWeight: FontWeight.bold,
+
                             // fontSize: Theme.of(context).textTheme.bodyMedium?.fontSize, // Optional: adjust size
                           ),
                         ),
@@ -238,7 +249,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                   // Dummy data
                   _buildDetailRow(
                     'Interest Rate:',
-                    '${loanDetailsObject.encoreAccountSummary?.normalInterestRate ?? 'N/A'}%',
+                    loanDetailsObject.encoreAccountSummary?.normalInterestRate ?? 'N/A',
                   ),
                   // Dummy data
                 ],
@@ -372,17 +383,46 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
 
           // Transaction History Section
           _buildSection(
+            child: Padding(
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                  child: Text(
-                    'Transaction History',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Transaction History',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
+                    InkWell(
+                      // Makes the "View More" text tappable
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TransactionHistory(accountId: loanDetailsObject.encoreAccountSummary?.accountId),
+                          ),
+                        );
+                        // For example, navigate to another screen or expand details
+
+                      },
+                      child: Text(
+                        'View More >',
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).primaryColor, // Or your preferred color
+                          fontWeight: FontWeight.bold,
+
+                          // fontSize: Theme.of(context).textTheme.bodyMedium?.fontSize, // Optional: adjust size
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 ..._transactions.map(
                   (tx) => ListTile(
@@ -415,6 +455,7 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
               ],
             ),
           ),
+            ),
 
           // Downloads Section
           _buildSection(
@@ -435,11 +476,11 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
                   Icons.calendar_today_outlined,
                 ),
                 _buildDownloadTile(
-                  'Loan Statement',
+                  'Statement of Loan',
                   Icons.receipt_long_outlined,
                 ),
                 _buildDownloadTile(
-                  'Interest Certificate',
+                  'NOC Certificate',
                   Icons.description_outlined,
                 ),
               ],
@@ -484,13 +525,12 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
       title: Text(title),
       trailing: const Icon(Icons.download_outlined, color: Colors.grey),
       onTap: () {
-        // TODO: Implement download logic
-        print('Downloading $title');
+        _downloadReport(title);
       },
     );
   }
 
-  void _onPayNow() {
+  Future<void> _onPayNow() async {
     // Ensure loanDetailsObject and dueDetails are not null and amount is valid
     // if (loanDetailsObject.dueDetails?.totoalDemadDue == null) {
     //   ScaffoldMessenger.of(context).showSnackBar(
@@ -498,8 +538,13 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
     //   );
     // }
 
-    String? amountString = '1200';
+    String? amountString = '1';
     double? amountDouble = double.tryParse(amountString!);
+
+    final prefs = await SharedPreferences.getInstance();
+    final String? customerMobile = prefs.getString(
+      'customerMobile',
+    ); //what was the string
 
     if (amountDouble == null || amountDouble <= 0) {
       ScaffoldMessenger.of(
@@ -520,9 +565,9 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
       'name': 'ARTHAN FINANCE',
       // Title for the payment modal
       'description':
-          'EMI Payment for Loan ID: ${loanDetailsObject.encoreAccountSummary?.accountId ?? 'N/A'}',
+          'EMI Payment for Loan ID : ${loanDetailsObject.encoreAccountSummary?.accountId ?? 'N/A'}',
       'prefill': {
-        'contact': 'USER_CONTACT_NUMBER', // Replace with actual user contact
+        'contact': customerMobile, // Replace with actual user contact
         'email': 'USER_EMAIL_ADDRESS', // Replace with actual user email
       },
       // 'order_id': 'YOUR_ORDER_ID', // Optional: If you're creating orders on your server
@@ -544,5 +589,203 @@ class _LoanDetailsScreenState extends State<LoanDetailsScreen>
         SnackBar(content: Text("Error initiating payment: ${e.toString()}")),
       );
     }
+  }
+
+  Future<void> _downloadReport(String title) async {
+    // Optional: Add a loading state for better UX
+    // For example, using a Map to track loading state for each report type
+    Map<String, bool> _isDownloadingReport = {};
+    setState(() { _isDownloadingReport[title] = true; });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Downloading "$title"...')),
+    );
+
+    try {
+      final String? accountId = widget.loan.accountId;
+      if (accountId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error: Account ID is missing.')),
+        );
+        if (_isDownloadingReport.containsKey(title)) { // Reset loading state if used
+          setState(() { _isDownloadingReport[title] = false; });
+        }
+        return;
+      }
+      final String reportName = "StatementOfAccount";
+
+      // Assuming _apiService.generateReport returns Future<List<int>>
+      // If it returns a Dio Response object, you'd access response.data
+      final dynamic apiResponse = await _apiService.generateReport(accountId, reportName, 'pdf');
+
+      List<int> fileBytes;
+
+      // Check the type of apiResponse and extract bytes
+      if (apiResponse is List<int>) {
+        fileBytes = apiResponse;
+      } else if (apiResponse is Response && apiResponse.data is List<int>) { // Example if ApiService returns Dio Response
+        fileBytes = apiResponse.data;
+      } else {
+        // Handle unexpected response type
+        debugPrint('Unexpected API response type: ${apiResponse.runtimeType}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download "$title": Invalid data format.')),
+        );
+        // if (_isDownloadingReport.containsKey(title)) { // Reset loading state
+        //   setState(() { _isDownloadingReport[title] = false; });
+        // }
+        return;
+      }
+
+      if (fileBytes.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to download "$title": Empty file received.')),
+        );
+        // if (_isDownloadingReport.containsKey(title)) { // Reset loading state
+        //   setState(() { _isDownloadingReport[title] = false; });
+        // }
+        return;
+      }
+
+      // 1. Get the appropriate directory to save the file.
+      // getApplicationDocumentsDirectory(): For files private to the app.
+      // getExternalStorageDirectory(): For files accessible by other apps (requires more permissions usually).
+      // For simplicity and fewer permission hassles, getApplicationDocumentsDirectory is often preferred.
+      final directory = await getApplicationDocumentsDirectory();
+
+      // 2. Create a filename. Make it unique if necessary.
+      //    Replacing spaces in title for a cleaner filename.
+      final String sanitizedReportName = reportName.replaceAll(RegExp(r'\s+'), '_').toLowerCase();
+      final String fileName = '${sanitizedReportName}_$accountId.pdf'; // Assuming PDF, adjust if not
+      final String filePath = '${directory.path}/$fileName';
+
+      // 3. Write the file to local storage.
+      final file = File(filePath);
+      await file.writeAsBytes(fileBytes, flush: true); // `flush: true` ensures data is written immediately
+
+      debugPrint('Report "$title" downloaded to: $filePath');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Report "$title" downloaded successfully!'),
+          action: SnackBarAction(
+            label: 'Open',
+            onPressed: () {
+              OpenFilex.open(filePath);
+            },
+          ),
+        ),
+      );
+
+      // 4. Optionally, open the downloaded file directly without SnackBar action
+      // final result = await OpenFilex.open(filePath);
+      // debugPrint('OpenFilex result: ${result.type} - ${result.message}');
+      // if (result.type != ResultType.done) {
+      //   ScaffoldMessenger.of(context).showSnackBar(
+      //     SnackBar(content: Text('Could not open file: ${result.message}')),
+      //   );
+      // }
+
+    } catch (e) {
+      print('Error downloading report "$title": $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error downloading report "$title": ${e.toString()}')),
+      );
+    } finally {
+      // if (_isDownloadingReport.containsKey(title)) { // Reset loading state
+      //   setState(() { _isDownloadingReport[title] = false; });
+      // }
+      // Your existing setState if it's tied to a general loading indicator
+      setState(() {
+        // Hide general registering/loading indicator (if needed)
+      });
+    }
+  }
+
+  Future<void> postPaymentToServer(PaymentSuccessResponse response) async {
+    final paymentData = {
+      "account_id": loanDetailsObject.encoreAccountSummary?.accountId ?? 'N/A',
+      "razorpay_payment_id": response.paymentId,
+    };
+
+    try {
+      final serverResponse = await _apiService.updatePaymentEntry(paymentData);
+      debugPrint('Server response after payment: $serverResponse');
+      if (serverResponse['apiCode'] == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text("Payment recorded successfully on server.")),
+        );
+        _lastSuccessfulPayment = null;
+      } else {
+        throw Exception('Server error: ${serverResponse['apiDesc']}');
+      }
+    } catch (error) {
+      debugPrint('Error sending payment data to server: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to record payment on server: ${error.toString()}")),
+      );
+      _lastSuccessfulPayment = response;
+      // Show bottom sheet to allow retry for posting to server
+      _showRetryPostPaymentBottomSheet();
+    }
+  }
+
+  // Method to show the bottom sheet for retrying postPaymentToServer
+  void _showRetryPostPaymentBottomSheet() {
+    if (_lastSuccessfulPayment == null) return; // Should not happen if called correctly
+
+    showModalBottomSheet<void>(
+        context: context,
+        isDismissible: true, // User can dismiss by tapping outside
+        builder: (BuildContext context) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Text(
+              'Payment Confirmation Failed',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Your payment through Razorpay was successful, but we couldn\'t confirm it with our server immediately. Please retry.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Retry Confirmation'),
+              onPressed: () {
+                Navigator.pop(context); // Dismiss the bottom sheet
+                if (_lastSuccessfulPayment != null) {
+                  postPaymentToServer(_lastSuccessfulPayment!); // Retry posting
+                }
+              },
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.pop(context); // Dismiss the bottom sheet
+                // User chose not to retry. You might want to guide them to contact support
+                // or check their transaction history later.
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("You can check your transaction history or contact support.")),
+                );
+              },
+            ),
+          ],
+        ),
+      );
+    },
+    );
   }
 }
