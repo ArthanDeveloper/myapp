@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:myapp/homepage.dart';
 import 'package:myapp/services/api_service.dart';
 
-import 'models/loan_details_object.dart'; // Assuming Loan model is in homepage.dart
-// Simple data model for a transaction
+import 'models/loan_details_object.dart';
+
 
 class AccountDetailsScreen extends StatefulWidget {
   final LoanDetailsObject loanDetailsObject;

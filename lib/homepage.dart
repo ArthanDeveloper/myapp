@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:myapp/helper/helper.dart';
+import 'package:myapp/support_tickets_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:myapp/loan_details_screen.dart'; // Import the LoanDetailsScreen
@@ -332,15 +333,22 @@ class _HomepageState extends State<Homepage>
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-      // If you want to re-trigger animations when switching to the "Home" tab (index 0)
-      // and it's not already the current tab, you can do:
-      if (index == 0) {
-        _animationController.reset();
-        _animationController.forward();
-      }
-    });
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SupportTicketsScreen()),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+        // If you want to re-trigger animations when switching to the "Home" tab (index 0)
+        // and it's not already the current tab, you can do:
+        if (index == 0) {
+          _animationController.reset();
+          _animationController.forward();
+        }
+      });
+    }
   }
 
   @override

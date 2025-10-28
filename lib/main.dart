@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:myapp/homepage.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
 import 'package:myapp/splash_screen.dart'; // Import the actual splash screen widget
-import 'package:myapp/onboarding_screen.dart'; // Import the first onboarding screen
 import 'package:myapp/login_page.dart'; // Import the login page
 import 'package:myapp/login_with_mpin_screen.dart'; // Import the LoginWithMpinScreen
 
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: SplashScreenWrapper(), // Start with the wrapper
+      home: Homepage(), // Start with the wrapper
     );
   }
 }
