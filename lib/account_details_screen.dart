@@ -4,7 +4,6 @@ import 'package:myapp/services/api_service.dart';
 
 import 'models/loan_details_object.dart';
 
-
 class AccountDetailsScreen extends StatefulWidget {
   final LoanDetailsObject loanDetailsObject;
 
@@ -126,16 +125,24 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
                   ),
                   _buildDetailRow(
                     'Interest Rate:',
-                    widget.loanDetailsObject.encoreAccountSummary?.normalInterestRate ?? 'N/A',
+                    widget
+                            .loanDetailsObject
+                            .encoreAccountSummary
+                            ?.normalInterestRate ??
+                        'N/A',
                   ),
                   _buildDetailRow(
                     'Operational Status:',
-                    widget.loanDetailsObject.encoreAccountSummary?.operationalStatus ??
+                    widget
+                            .loanDetailsObject
+                            .encoreAccountSummary
+                            ?.operationalStatus ??
                         'N/A',
                   ),
                   _buildDetailRow(
                     'Loan Branch:',
-                    widget.loanDetailsObject.encoreAccountSummary?.branchName ?? 'N/A',
+                    widget.loanDetailsObject.encoreAccountSummary?.branchName ??
+                        'N/A',
                   ),
                   _buildDetailRow(
                     'Loan Type:',
@@ -143,7 +150,9 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen>
                         'N/A',
                   ),
                   _buildDetailRow(
-                    'Mortgage Type:', widget.loanDetailsObject.encoreAccountSummary?.udfText6 ?? 'N/A',
+                    'Mortgage Type:',
+                    widget.loanDetailsObject.encoreAccountSummary?.udfText6 ??
+                        'N/A',
                   ),
                 ],
               ),
